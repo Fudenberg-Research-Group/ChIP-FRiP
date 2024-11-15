@@ -228,7 +228,7 @@ rule samtools_filter:
     output:
         temp(f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.bam")
     shell:
-        "samtools view -F 1804 --threads {process} -h -q {quality} {input} > {output}"
+        "samtools view --threads {process} -h -q {quality} {input} > {output}"
 
 # sort by reads name and then correctly remove secondary and unmapped reads
 rule samtools_fixmate:

@@ -1,10 +1,10 @@
 input:
     bowtie_index: '/home1/yxiao977/proj/frip_sm_data/bowtie_index/hg38_mm10/hg38_mm10_index' # Pathway to the bowtie index files, e.g.: **/path_to_index_directory/file_prefix
     ChIP_fastqs: '/home1/yxiao977/proj/frip_sm_data/download_fastq/Liu_2020' # Pathway to the ChIP fastq files
-    metadata: '' # Leave it blank ('') if there is no input(control) samples. Pathway to the metadata.txt that have a table indicates the input(control) sample and the ChIP sample
+    chip_input_table: '' # Leave it blank ('') if there is no input(control) samples. Pathway to the chip_input_table that indicates the input(control) sample and the ChIP sample
 
 common_params:
-    processes: 5 # Number of cpus will be used per task. If you set --cores when you run snakemake command line, cores * processes should be <= the number of cpus you have
+    processes: 5 # Number of cpus will be used per task. If you set --cores when you run snakemake command line, processes should be <= cores set in the command line when run snakemake
     include_spikein: false # Whether the experiment inlcude the 
 
 samtools_params:

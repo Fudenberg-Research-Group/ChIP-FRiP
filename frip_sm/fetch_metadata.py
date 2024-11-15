@@ -12,13 +12,17 @@ args = parser.parse_args()
 with open(args.config_path, "r") as f:
     config = yaml.safe_load(f)
 
-######## Parameters ####################################################
+########################################################################
+############################ Parameters ################################
+########################################################################
+    
 dataset = config["parameters"]["dataset"]
 geo_accession = config["parameters"]["geo_accession"]
 
 path_to_accessions = config["input"]["path_to_accessions"]
 
 output_dir = config["output"]["output_directory"]
+
 ########################################################################
 
 accessions = np.loadtxt(path_to_accessions, dtype="str")
@@ -53,13 +57,17 @@ KEY_WORDS = ["gen", "cell", "organism", "anti"]
 attribute_keys = {}
 for i, row in df.iterrows():
     a = row["GSM_accession"].replace(" ", "")
+
+    # Step1: fetch the dictionary of attributes
     while True:
         try:
             data = fetch_metadata(a)
             attributes = data[a]["samples"][list(data[a]["samples"].keys())[0]]["attributes"]
-        except TypeError:
+        except (TypeError, KeyError):
             continue
         break
+
+    # Step2: fetch attributes' keys in dictionary
     if len(attribute_keys) == 0:
         key_df = pd.DataFrame({"Keys": attributes.keys()})
         for kw in KEY_WORDS:
@@ -68,20 +76,17 @@ for i, row in df.iterrows():
             except IndexError:
                 print(f"There is no attributes match with the substring {kw}, so we add its title here, and you can check manually")
                 attribute_keys[kw] = 'title'
-    try:
-        condition.append(attributes[attribute_keys[KEY_WORDS[0]]])
-    except KeyError:
-        condition.append(row["Experiment"])
-        
-    celltype.append(attributes[attribute_keys[KEY_WORDS[1]]])
-    organism.append(attributes[attribute_keys[KEY_WORDS[2]]])
+    
+    # Step3: add entries to each attribute column
+    for j, col in enumerate([condition, celltype, organism, antibody]):
+        try:
+            col.append(attributes[attribute_keys[KEY_WORDS[j]]])
+        except KeyError:
+            col.append(row["Experiment"])
 
-    try:
-        antibody.append(attributes[attribute_keys[KEY_WORDS[3]]])
-    except KeyError:
-        antibody.append(row["Experiment"])
     print(i, accessions[i], "attributes have been fetched")
 
+# create a dataframe
 df["Condition"] = condition
 df["Antibody"] = antibody
 df["Celltype"] = celltype
@@ -91,6 +96,7 @@ df["Peak_ChIP"] = ["N/A"] * len(df)
 df["author_year"] = [dataset] * len(df)
 df["GEO"] = [geo_accession] * len(df)
 
+# reform dataframe
 cols = [
     "Organism",
     "Celltype",
