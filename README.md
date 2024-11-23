@@ -1,10 +1,10 @@
 # fastaFRiP
 
 ## Description
-This is a pipeline for calculating FRiP ("fraction of reads in peaks") from fastq (or bed + fastq).
+This is a pipeline for calculating FRiP ("fraction of reads in peaks") from bed + fastq.
 
 ## Prerequisites
-- python
+- Python
 
 ## Installation
 ```
@@ -102,7 +102,7 @@ To create metadata file, modifying `config/fetch_metadata_config.yml`, and run
 ```
 python fetch_metadata.py config/fetch_metadata_config.yml
 ```
-Example output metadata table:
+*Example output metadata table:*
 
 <center>
 
@@ -112,7 +112,7 @@ Example output metadata table:
 | Homo sapiens  | RPE      |  Control     | H3K4me3  | N/A       | Nakato_2023   | SRR18024425  | GSM5899635    | GSE196450  |  Control        |
 </center>
 
-If you have your own bam files, you can also create a metadata table based on the below template. Each row is one sample, if the sample does not have either BAM file or Peak BED file, then just leave the cell blank. (columns listed below are mandatory for pipeline. For convenience, you can also add more columns as above example output metadata table):
+**If you have your own bam files**, you can also create a metadata table based on the below template. Each row is one sample, if the sample does not have either BAM file or Peak BED file, then just leave the cell blank. (columns listed below are mandatory for pipeline. For convenience, you can also add more columns as above example output metadata table):
 | Condition               | Antibody | BAM          | Peak_BED         |
 |-------------------------|----------|--------------|------------------|
 | condition of the sample | antibody used in ChIP assay  | pathway to the BAM file of its ChIP-seq| pathway to the peak BED file by calling peaks on this sample|
