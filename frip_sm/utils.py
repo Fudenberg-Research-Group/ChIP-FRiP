@@ -92,8 +92,9 @@ def create_frip_table_from_bed(
         }
     )
     frip_df = pd.concat([frip_df, samples_metadata, extra_df], axis=1)
-    frip_df["peaks-SRA"] = [peak_protein_srun] * len(frip_df)
-    # frip_df["GSM_accession"] = [peak_protein_srun] * len(frip_df)
-    # frip_df = frip_df.rename(columns={"GSM_accession": "peaks-SRA"})
+    
+    # replace GSM_accession column with peaks-SRA
+    frip_df["GSM_accession"] = [peak_protein_srun] * len(frip_df)
+    frip_df = frip_df.rename(columns={"GSM_accession": "peaks-SRA"})
 
     return frip_df

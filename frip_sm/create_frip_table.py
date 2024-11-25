@@ -6,7 +6,7 @@ import argparse
 import warnings
 from utils import create_frip_table_from_bed
 
-GENOME_SIZE = {"hg38": 3.1*10**9, "mm39": 2.7*10**9}
+GENOME_SIZE = {"hg38": 3.1*10**9, "mm39": 2.7*10**9, "mm10": 2.7*10**9}
 
 parser = argparse.ArgumentParser(description="Create a FRiP table")
 parser.add_argument("config_path", type=str, help="Path to the configuration file.")
@@ -49,7 +49,7 @@ elif CONDITION[0] == "~":
 else:
     conditions = df[df["Condition"].str.contains(CONDITION, case=False)]["Condition"].unique()
     
-bed_filename = f"{path_to_bed.split("/")[-1].split(".")[0]}"
+bed_filename = f"{path_to_bed.split('/')[-1].split('.')[0]}"
 frip_tables = []
 for condition in conditions:
     samples_metadata = df[df["Condition"] == condition].reset_index(
