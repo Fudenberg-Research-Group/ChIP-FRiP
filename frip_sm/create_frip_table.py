@@ -49,58 +49,62 @@ elif CONDITION[0] == "~":
 else:
     conditions = df[df["Condition"].str.contains(CONDITION, case=False)]["Condition"].unique()
     
-bed_filename = f"{path_to_bed.split('/')[-1].split('.')[0]}"
-frip_tables = []
-for condition in conditions:
-    samples_metadata = df[df["Condition"] == condition].reset_index(
-        drop=True
-    )
-    ### get peak bed files ###
-    if path_to_bed != "":
-        beds = [path_to_bed]
-        peak_protein_sruns = [bed_filename]
-    else:
-        peak_proteins = df[
-            (df["Condition"] == condition)
-            & (df["Antibody"].str.contains(peak_protein, case=False))
-        ].reset_index(drop=True)
+bed_filenames = [f"{p.split('/')[-1].split('.')[0]}" for p in path_to_bed]
+if bed_filenames == []:
+    bed_filenames.append('')
 
-        if len(peak_proteins) == 0:
-            warnings.warn(f"There is no {peak_protein} sample under this condition: {condition}. Please try to use <path_to_bed> parameter in config file to specify the bed file you want to use for this condition")
-            continue 
-        
-        if customized_metadata:
-            beds = peak_proteins[peak_proteins["Peak_BED"] != ""]["Peak_BED"].to_list()
-            peak_protein_sruns = beds
-        else:  
-            peak_protein_sruns = peak_proteins["SRUN"].to_list()
-            beds = [
-                glob.glob(f"{path_to_data}/{p_srun}/*.narrowPeak")[0]
-                for p_srun in peak_protein_sruns
-            ]
-
-    ### create frip tables ###
-    frip_dfs = []
-    for i, bed in enumerate(beds):
-        frip_df = create_frip_table_from_bed(
-            samples_metadata,
-            bed,
-            path_to_data,
-            genome_size,
-            species,
-            nproc,
-            peak_protein_srun=peak_protein_sruns[i],
-            customized_metadata=customized_metadata,
+for bed_filename in bed_filenames:
+    frip_tables = []
+    for condition in conditions:
+        samples_metadata = df[df["Condition"] == condition].reset_index(
+            drop=True
         )
-        frip_dfs.append(frip_df)
-    
-    frip_table = pd.concat(frip_dfs, axis=0)
-    frip_tables.append(frip_table)
+        ### get peak bed files ###
+        if path_to_bed != []:
+            beds = path_to_bed
+            peak_protein_sruns = bed_filenames
+        else:
+            peak_proteins = df[
+                (df["Condition"] == condition)
+                & (df["Antibody"].str.contains(peak_protein, case=False))
+            ].reset_index(drop=True)
 
-frip_metadata = pd.concat(frip_tables, axis=0)
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
+            if len(peak_proteins) == 0:
+                warnings.warn(f"There is no {peak_protein} sample under this condition: {condition}. Please try to use <path_to_bed> parameter in config file to specify the bed file you want to use for this condition")
+                continue 
+            
+            if customized_metadata:
+                beds = peak_proteins[peak_proteins["Peak_BED"] != ""]["Peak_BED"].to_list()
+                peak_protein_sruns = beds
+            else:  
+                peak_protein_sruns = peak_proteins["SRUN"].to_list()
+                beds = [
+                    glob.glob(f"{path_to_data}/{p_srun}/*.narrowPeak")[0]
+                    for p_srun in peak_protein_sruns
+                ]
 
-frip_metadata.to_csv(
-    output_dir + f"/{CONDITION}_{peak_protein}{bed_filename}_frips.txt", sep="\t", index=False
-)
+        ### create frip tables ###
+        frip_dfs = []
+        for i, bed in enumerate(beds):
+            frip_df = create_frip_table_from_bed(
+                samples_metadata,
+                bed,
+                path_to_data,
+                genome_size,
+                species,
+                nproc,
+                peak_protein_srun=peak_protein_sruns[i],
+                customized_metadata=customized_metadata,
+            )
+            frip_dfs.append(frip_df)
+        
+        frip_table = pd.concat(frip_dfs, axis=0)
+        frip_tables.append(frip_table)
+
+    frip_metadata = pd.concat(frip_tables, axis=0)
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    frip_metadata.to_csv(
+        output_dir + f"/{CONDITION}_{peak_protein}{bed_filename}_frips.txt", sep="\t", index=False
+    )

@@ -10,8 +10,8 @@ shell.prefix("source $(conda info --base)/etc/profile.d/conda.sh && conda activa
 # Input
 ###############
 chip_fastqs_path = config["input"]["ChIP_fastqs"]
-if config["input"]["chip_input_table"] != '':
-    chip_input_table = pd.read_table(config["input"]["chip_input_table"])
+if config["input"]["ChIP_input_table"] != '':
+    chip_input_table = pd.read_table(config["input"]["ChIP_input_table"])
 
 ###############
 # Parameters
@@ -64,7 +64,7 @@ def get_chipseq_input_spikestats_path(wildcards):
     input_sample_name = chip_input_table[chip_input_table.ChIP == wildcards.sample_name]['Input'].iloc[0]  
     input_spikeinstats_file = f"{wildcards.pathway_to_folder}/{input_sample_name}/{input_sample_name}.spikein.stats"  
     
-    return input_file
+    return input_spikeinstats_file
 
 def get_fastq_paths(wildcards):
     plain = f"{chip_fastqs_path}/{wildcards.sample_name}.fastq"
@@ -145,7 +145,7 @@ if include_spikein:
             f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_spikein}.sort.bam",
             sample_name=samples
         )
-    if config["input"]["chip_input_table"] == '' :
+    if config["input"]["ChIP_input_table"] == '' :
         bw = expand(
             f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.{index_primary}.bw",
             sample_name=samples
@@ -188,7 +188,7 @@ else:
             f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.bw",
             sample_name=samples
         )
-    if config["input"]["chip_input_table"] == '' :
+    if config["input"]["ChIP_input_table"] == '' :
         peaks_bed = expand(
             f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.dedup_peaks.narrowPeak",
             sample_name=samples
@@ -231,7 +231,7 @@ rule bowtie2_map:
     input:
         files = get_fastq_paths
     params:
-        trimmed_fastq_path1 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.trimmed.fastq"
+        trimmed_fastq_path1 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.trimmed.fastq",
         trimmed_fastq_path2 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}_2.trimmed.fastq"
     wildcard_constraints:
         sample_name = "[a-zA-Z0-9_-]+"
