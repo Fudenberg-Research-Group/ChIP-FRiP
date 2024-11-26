@@ -1,7 +1,19 @@
 # fastaFRiP
 
 ## Description
-This is a pipeline for calculating FRiP ("fraction of reads in peaks") from bed + fastq.
+This is a pipeline for calculating FRiP ("fraction of reads in peaks") from FASTQ.
+
+This involves mapping and filtering FASTQ to generate bam files (with bowtie2 and samtools), calling peaks (with macs2). FRiP is then calculated from the bam files and bed files. Publicly-available datasets provide FASTQ files, however, bam files are often not provided, yet essential for calculating FRiP.
+
+The fastaFRiP pipeline can be used to process ChIP-seq datasets that are:
+- spike-in or not spike-in
+- single-end or paired-end 
+- with input or with no input
+
+This repository additional provides scripts for:
+- managing metadata from SRA/GEO (via ffq)
+- computing FRiP (via DeepTools)
+
 
 ## Prerequisites
 - Python
@@ -22,20 +34,18 @@ FASTQ data is available in the Gene Expression Omnibus (GEO). FASTQ is a common 
 
 By clicking on the 'SRA Run Selector', users can select and download specific data (e.g., based on organism, gene, condition, or experiment type) from the Sequence Read Archive (SRA) page.
 
-To quickly access the accession codes of ChIP-seq experiments, you can click "Metadata" button on the page to get "SraRunTable.txt" and use the following command:
+To quickly access the accession codes for a particular ChIP-seq dataset, click "Metadata" button on the page to download "SraRunTable.txt". To extract accesion numbers for each file, run:
 ```
 grep "ChIP" SraRunTable.txt | awk -F, '{print $1}' > accessions.txt
 ```
-This command extracts the codes for each file, which can later be used to download the necessary data.
 
-We have provided a script, batch_download.sh, to facilitate the data download (In this script, we use `fasterq-dump`, which comes as part of `sra-tools`) \
-You can run the script by having the 'accession.txt' in the same folder:
+ `batch_download.sh`, will download FASTQs listed in 'accessions.txt'. This uses `fasterq-dump` (from `sra-tools`). This script requires 'accession.txt' in the same folder, and can be run as:
 ```
 ./batch_download.sh
 ```
 
 ### Create Bowtie2 index files
-We got our index files from NCBI or UCSC genome browser. From NCBI, you can choose to use bowtie2 index files directly, or download reference genome for alignment to make your own bowtie2 index files.
+For many genomes, bowtie2 index files can be obtained from NCBI or the UCSC genome browser. From NCBI, you can choose to use bowtie2 index files directly, or download reference genome for alignment to make your own bowtie2 index files.
 
 <center>
 
@@ -55,7 +65,7 @@ Most of time, you can use bowtie2 index files directly by running the following 
 tar -xvzf GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.bowtie_index.tar.gz
 ```
 
-However, sometimes you might encounter spike-in ChIP-seq. Then you can use the following way to create a bowtie index files that include two species, here we use hg38 and mm39 as an example:
+For spike-in ChIP-seq, you can use the following way to create a bowtie index files that includes two species, here we use hg38 and mm39 as an example:
 ```
 gunzip GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz
 gunzip GCA_000001635.9_GRCm39_full_analysis_set.fna.gz
@@ -72,12 +82,11 @@ bowtie2-build ../hg38_mm39.fna hg38_mm39.bowtie_index
 ## Running the pipeline
 
 ### Files specification
-Specify the locations of your input files (FASTQ and Bowtie index files) and output files, and choose whether to include spike-in normalization in the configuration file config.yml. Detailed explanations for each parameter are included in config.yml. 
-If the experiment includes spike-in, set include_spikein to true, and set index_primary and index_spikein according to the experiment.
+Specify the locations of your input files (FASTQ and Bowtie index files) and output files, and choose whether to include spike-in normalization in the configuration file `config.yml`. Detailed explanations for each parameter are included in config.yml. 
+If the experiment includes spike-in, set 'include_spikein' to true, and set 'index_primary' and 'index_spikein' according to the experiment.
 
-### ChIP & Input table for Peak Calling:
-To rescale the bigwig file and call peaks based on an input (control) sample, the pipeline requires a metadata table with two columns: ChIP and Input. The sample names should match those in the FASTQ files (e.g., SRR5085155.fastq). If a sample does not have input, exclude it from the table.
-A python script for generating such a table is provided here, create_frip_table.py.
+#### ChIP & Input table for Peak Calling:
+To rescale the bigwig file and call peaks based on an input (control) sample, the pipeline requires a metadata table with two columns: ChIP and Input. 
 
 <center>
 
@@ -86,6 +95,9 @@ A python script for generating such a table is provided here, create_frip_table.
 | SRR5085155 | SRR5085156 |
 | SRR5085157 | SRR5085158 |
 </center>
+
+Sample names should match those in the FASTQ files (e.g., SRR5085155.fastq). If a sample does not have input, exclude it from the table.
+A python script for generating such a table is provided in this repository, `generate_chip_input_table.ipynb`.
 
 ### Generating BAM/BED files
 
@@ -112,6 +124,7 @@ python fetch_metadata.py config/fetch_metadata_config.yml
 | Homo sapiens  | RPE      |  Control     | H3K4me3  | N/A       | Nakato_2023   | SRR18024425  | GSM5899635    | GSE196450  |  Control        |
 </center>
 
+## q: why we need peak_bed column here and if we can remove peak_chip column 
 **If you have your own bam files**, you can also create a metadata table based on the below template. Each row is one sample, if the sample does not have either BAM file or Peak BED file, then just leave the cell blank. (columns listed below are mandatory for pipeline. For convenience, you can also add more columns as above example output metadata table):
 | Condition               | Antibody | BAM          | Peak_BED         |
 |-------------------------|----------|--------------|------------------|
@@ -135,7 +148,7 @@ python create_frip_table.py config/create_frip_table_config.yml
 | 0.00698026098917694 | Homo sapiens | Hap1     | SCC4KO    | IgG      | CTCF     | Haarhuis_2017 | SRR5266524 | SRR5266528  | GSE90994  | SCC4KO IgG ChIPseq      | 1.7068670762832925 | 37415  | 12677501                   | 14485275     |
 </center>
 
-### Only calculating FRiP value
+### Only calculating FRiP value (can be removed)
 you can use `calculate_frip.py` to calculate FRiP value.
 ```
 python calculate_frip.py --nproc [number of cpus] [pathway to the metadata table]

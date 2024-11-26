@@ -3,6 +3,9 @@ import re
 import os
 import pandas as pd
 
+# Set the prefix to activate the conda environment
+shell.prefix("source $(conda info --base)/etc/profile.d/conda.sh && conda activate fastq_frip_env && ")
+
 ###############
 # Input
 ###############
@@ -31,14 +34,14 @@ else:
 ###############
 # Output path
 ###############
-ChIP_result_folder = config["output"]["ChIP_output_path"]
+chip_result_folder = config["output"]["ChIP_output_path"]
 
 # Check if the directory exist. If not, create the directory
-if not os.path.exists(ChIP_result_folder):
-    os.makedirs(ChIP_result_folder)
+if not os.path.exists(chip_result_folder):
+    os.makedirs(chip_result_folder)
 
 ########################
-# Some condition check
+# Input validation
 ########################
 if include_spikein:
     if index_spikein == "" or index_spikein == None:
@@ -51,10 +54,19 @@ if index_spikein != "" and index_spikein != None:
 ########################
 # Helper functions
 ########################
-def get_control(sample_name):
-    return chip_input_table[chip_input_table.ChIP == sample_name]['Input'].iloc[0]
+def get_chipseq_input_path(wildcards):
+    input_sample_name = chip_input_table[chip_input_table.ChIP == wildcards.sample_name]['Input'].iloc[0]  
+    input_file = f"{wildcards.pathway_to_folder}/{input_sample_name}/{input_sample_name}.q{quality}.{wildcards.type}.bam" 
+    
+    return input_file
 
-def get_input(wildcards):
+def get_chipseq_input_spikestats_path(wildcards):
+    input_sample_name = chip_input_table[chip_input_table.ChIP == wildcards.sample_name]['Input'].iloc[0]  
+    input_spikeinstats_file = f"{wildcards.pathway_to_folder}/{input_sample_name}/{input_sample_name}.spikein.stats"  
+    
+    return input_file
+
+def get_fastq_paths(wildcards):
     plain = f"{chip_fastqs_path}/{wildcards.sample_name}.fastq"
     gzipped = f"{chip_fastqs_path}/{wildcards.sample_name}.fastq.gz"
     paired1 = f"{chip_fastqs_path}/{wildcards.sample_name}_1.fastq"
@@ -69,7 +81,7 @@ def get_input(wildcards):
 
     raise FileNotFoundError(f"No input file found for sample {wildcards.sample_name}, here's the path{gzipped}, {wildcards.sample_name}")
 
-def is_paired(sample_name):
+def is_paired_end(sample_name):
     paired1 = f"{chip_fastqs_path}/{sample_name}_1.fastq"
     paired2 = f"{chip_fastqs_path}/{sample_name}_2.fastq"
 
@@ -78,140 +90,138 @@ def is_paired(sample_name):
     
     return False
 
-
 #############################################
 # Create lists of output filenames
 #############################################
+# q: would this be more readable in an if/else statement for paired/single end?
 sample_filenames = glob.glob(chip_fastqs_path+'/*.fastq*')
-pattern = r"(_[12])?\.fastq.*"
-samples = [re.sub(pattern, '', s.split('/')[-1]) for s in sample_filenames]
+fastq_filename_pattern = r"(_[12])?\.fastq.*"
+samples = [re.sub(fastq_filename_pattern, '', s.split('/')[-1]) for s in sample_filenames]
 samples = list(set(samples))
+se_samples = [s for s in samples if not is_paired_end(s)]
+pe_samples = [s for s in samples if is_paired_end(s)]
 
 sam = expand(
-        f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.sam",
+        f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.sam",
         sample_name=samples
     )
 
-se_samples = [s for s in samples if not is_paired(s)]
-pe_samples = [s for s in samples if is_paired(s)]
-bam = expand(
-        f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.bam",
+bam_se = expand(
+        f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.bam",
         sample_name=se_samples
     )
 bam_pe = expand(
-        f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.pairedend.q{quality}.bam",
+        f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.pairedend.q{quality}.bam",
         sample_name=pe_samples
     )
 
 fixed_bam = expand(
-        f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.bam",
+        f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.bam",
         sample_name=pe_samples
     )
 
 sort_bam = expand(
-        f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.sort.bam",
+        f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.sort.bam",
         sample_name=samples
     )
 
 dedup_bam = expand(
-        f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.dedup.bam",
+        f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.dedup.bam",
         sample_name=samples
     )
 
 if include_spikein:
-    sam_stats = expand(
-            f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.spikein.stats",
+    spikein_stats_files = expand(
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.spikein.stats",
             sample_name=samples
         )
 
     primary_sort_bam = expand(
-            f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort.bam",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort.bam",
             sample_name=samples
         )
 
     spikein_sort_bam = expand(
-            f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_spikein}.sort.bam",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_spikein}.sort.bam",
             sample_name=samples
         )
     if config["input"]["chip_input_table"] == '' :
         bw = expand(
-            f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.{index_primary}.bw",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.{index_primary}.bw",
             sample_name=samples
         )
-        bw_ctrl = []
+        bw_with_input = []
 
         peaks_bed = expand(
-            f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort_peaks.narrowPeak",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort_peaks.narrowPeak",
             sample_name=samples
         )
-        peaks_bed_wi = []
+        peaks_bed_with_input = []
 
     else:
         have_input = [s for s in samples if s in chip_input_table['ChIP'].unique()]
         no_input = [s for s in samples if s not in chip_input_table['ChIP'].unique()]
         bw = expand(
-                f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.{index_primary}.rescale.bw",
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.{index_primary}.rescale.bw",
                 sample_name=have_input
             )
-        bw_ctrl = expand(
-                f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.{index_primary}.bw",
+        bw_with_input = expand(
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.{index_primary}.bw",
                 sample_name=no_input
             )
         peaks_bed = expand(
-                f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort_peaks.narrowPeak",
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort_peaks.narrowPeak",
                 sample_name=no_input
             )
-        peaks_bed_wi = expand(
-                f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort.withinput_peaks.narrowPeak",
+        peaks_bed_with_input = expand(
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort.withinput_peaks.narrowPeak",
                 sample_name=have_input
             )
 else:
-    sam_stats = []
+    spikein_stats_files = []
     primary_sort_bam = []
     spikein_sort_bam = []
-    bw_ctrl = []
+    bw_with_input = []
     index_primary = "no_primary"
     index_spikein = "no_spikein"
     bw = expand(
-            f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.bw",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.bw",
             sample_name=samples
         )
     if config["input"]["chip_input_table"] == '' :
         peaks_bed = expand(
-            f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.dedup_peaks.narrowPeak",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.dedup_peaks.narrowPeak",
             sample_name=samples
         )
-        peaks_bed_wi = []
+        peaks_bed_with_input = []
 
     else:
         have_input = [s for s in samples if s in chip_input_table['ChIP'].unique()]
         no_input = [s for s in samples if s not in chip_input_table['ChIP'].unique()]
         peaks_bed = expand(
-                f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.dedup_peaks.narrowPeak",
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.dedup_peaks.narrowPeak",
                 sample_name=no_input
             )
-        peaks_bed_wi = expand(
-                f"{ChIP_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.dedup.withinput_peaks.narrowPeak",
+        peaks_bed_with_input = expand(
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.dedup.withinput_peaks.narrowPeak",
                 sample_name=have_input
             )
 
-# Set the prefix to activate the conda environment
-shell.prefix("source $(conda info --base)/etc/profile.d/conda.sh && conda activate fastq_frip_env && ")
 rule all:
     input:
         sam,
-        bam,
+        bam_se,
         bam_pe,
         fixed_bam,
         sort_bam,
         dedup_bam,
-        sam_stats,
+        spikein_stats_files,
         primary_sort_bam,
         spikein_sort_bam,
         bw,
-        bw_ctrl,
+        bw_with_input,
         peaks_bed,
-        peaks_bed_wi,
+        peaks_bed_with_input,
 
 ##############################
 # Alignment starts here
@@ -219,7 +229,7 @@ rule all:
 # automatic trim and alignment
 rule bowtie2_map:
     input:
-        files = get_input
+        files = get_fastq_paths
     params:
         trimmed_fastq_path1 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.trimmed.fastq"
         trimmed_fastq_path2 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}_2.trimmed.fastq"
@@ -244,7 +254,7 @@ rule bowtie2_map:
         fi
         """
 
-# skip alignments with MAPQ smaller than INT {quality} and type of reads include in argument -F 
+# skip alignments with MAPQ smaller than INT {quality} and type of reads include in argument -F 1804, which includes read unmapped, mate unmapped, not primary alignment, Read fails platform/vendor quality checks, Read is PCR or optical duplicate
 rule samtools_filter:
     input:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.sam"
@@ -390,20 +400,20 @@ rule spikein_bw:
 # Spike-in Normalization
 rule rescaling:
     input:
-        ChIP_stats = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.spikein.stats",
-        ctrl_stats = lambda wildcards: f"{wildcards.pathway_to_folder}/{get_control(wildcards.sample_name)}/{get_control(wildcards.sample_name)}.spikein.stats",
-        ChIP_bam = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort.bam"
+        chip_stats = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.spikein.stats",
+        chip_input_stats = lambda wildcards: get_chipseq_input_spikestats_path(wildcards),
+        chip_bam = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort.bam"
     output:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.{index_primary}.rescale.bw"
     shell:
         """
-        primary_reads=$(awk -F'=' '/{index_primary}_reads/{{print $2}}' {input.ChIP_stats}) 
-        spikein_reads=$(awk -F'=' '/{index_spikein}_reads/{{print $2}}' {input.ChIP_stats}) 
-        ctrl_primary_reads=$(awk -F'=' '/{index_primary}_reads/{{print $2}}' {input.ctrl_stats})  
-        ctrl_spikein_reads=$(awk -F'=' '/{index_spikein}_reads/{{print $2}}' {input.ctrl_stats})
-        factor=`echo "scale=20; $ctrl_spikein_reads / $ctrl_primary_reads / $spikein_reads * 15000000" | bc`
-        echo "Scaling_factor=$factor" >> {input.ChIP_stats}
-        bamCoverage -b {input.ChIP_bam} -o {output} -of bigwig --binSize {binsize} --scaleFactor $factor
+        primary_reads=$(awk -F'=' '/{index_primary}_reads/{{print $2}}' {input.chip_stats}) 
+        spikein_reads=$(awk -F'=' '/{index_spikein}_reads/{{print $2}}' {input.chip_stats}) 
+        chip_input_primary_reads=$(awk -F'=' '/{index_primary}_reads/{{print $2}}' {input.chip_input_stats})  
+        chip_input_spikein_reads=$(awk -F'=' '/{index_spikein}_reads/{{print $2}}' {input.chip_input_stats})
+        factor=`echo "scale=20; $chip_input_spikein_reads / $chip_input_primary_reads / $spikein_reads * 15000000" | bc`
+        echo "Scaling_factor=$factor" >> {input.chip_stats}
+        bamCoverage -b {input.chip_bam} -o {output} -of bigwig --binSize {binsize} --scaleFactor $factor
         """
 
 ##############################
@@ -415,7 +425,7 @@ rule bam_to_bed:
     params:
         output_prefix = f"{{sample_name}}.q{quality}.{{type}}", 
         output_dir = f"{{pathway_to_folder}}/{{sample_name}}/",
-        fastq_files = lambda wildcards: get_input(wildcards)
+        fastq_files = lambda wildcards: get_fastq_paths(wildcards) # q: can this be done as get_fastq_paths(wildcards, chip_fastqs_input)?
     output:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{{type}}_peaks.narrowPeak"
     shell:
@@ -433,11 +443,11 @@ rule bam_to_bed:
 rule bam_to_bed_wi:
     input:
         bam = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{{type}}.bam",
-        ctrl_file = lambda wildcards: f"{wildcards.pathway_to_folder}/{get_control(wildcards.sample_name)}/{get_control(wildcards.sample_name)}.q{quality}.{wildcards.type}.bam",
+        chip_input_file = lambda wildcards: get_chipseq_input_path(wildcards),
     params:
         output_prefix = f"{{sample_name}}.q{quality}.{{type}}.withinput", 
         output_dir = f"{{pathway_to_folder}}/{{sample_name}}/",
-        fastq_files = lambda wildcards: get_input(wildcards)
+        fastq_files = lambda wildcards: get_fastq_paths(wildcards)
     output:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{{type}}.withinput_peaks.narrowPeak"
     shell:
@@ -446,8 +456,8 @@ rule bam_to_bed_wi:
         num_files=${{#files[@]}}
 
         if [ "$num_files" -eq 1 ]; then
-            macs2 callpeak {broad_peaks_option} -t {input.bam} -c {input.ctrl_file} -n {params.output_prefix} --outdir {params.output_dir}
+            macs2 callpeak {broad_peaks_option} -t {input.bam} -c {input.chip_input_file} -n {params.output_prefix} --outdir {params.output_dir}
         elif [ "$num_files" -eq 2 ]; then
-            macs2 callpeak {broad_peaks_option} -f BAMPE -t {input.bam} -c {input.ctrl_file} -n {params.output_prefix} --outdir {params.output_dir}
+            macs2 callpeak {broad_peaks_option} -f BAMPE -t {input.bam} -c {input.chip_input_file} -n {params.output_prefix} --outdir {params.output_dir}
         fi
         """
