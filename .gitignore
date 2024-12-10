@@ -1,7 +1,6 @@
 archive/
 records/
 Untitled.ipynb
-generate_chip_input_table.ipynb
 averaged_rad21.bigwig
 # ignore snakemake metadata
 .snakemake

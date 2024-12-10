@@ -91,8 +91,7 @@ df["Condition"] = condition
 df["Antibody"] = antibody
 df["Celltype"] = celltype
 df["Organism"] = organism
-
-df["Peak_ChIP"] = ["N/A"] * len(df)
+df["Peak_protein"] = ["N/A"] * len(df)
 df["author_year"] = [dataset] * len(df)
 df["GEO"] = [geo_accession] * len(df)
 
@@ -102,8 +101,8 @@ cols = [
     "Celltype",
     "Condition",
     "Antibody",
-    "Peak_ChIP",
-    "author_year",
+    "Peak_protein",
+    "Author_year",
     "SRUN",
     "GSM_accession",
     "GEO",

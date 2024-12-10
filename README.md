@@ -118,17 +118,19 @@ python fetch_metadata.py config/fetch_metadata_config.yml
 
 <center>
 
-| Organism      | Celltype | Condition                   | Antibody | Peak_ChIP | Author_Year   | SRUN         | GSM_Accession | GEO        | Experiment                      |
+| Organism      | Celltype | Condition                   | Antibody | Peak_protein | Author_Year   | SRUN         | GSM_Accession | GEO        | Experiment                      |
 |---------------|----------|-----------------------------|----------|-----------|---------------|--------------|---------------|------------|---------------------------------|
 | Homo sapiens  | RPE      | siNIPBL     | H3K4me3  | N/A       | Nakato_2023   | SRR18024424  | GSM5899636    | GSE196450  |  siNIPBL        |
 | Homo sapiens  | RPE      |  Control     | H3K4me3  | N/A       | Nakato_2023   | SRR18024425  | GSM5899635    | GSE196450  |  Control        |
 </center>
 
-## q: why we need peak_bed column here and if we can remove peak_chip column 
+## q: why we need peak_bed column here and if we can remove peak_bed column 
 **If you have your own bam files**, you can also create a metadata table based on the below template. Each row is one sample, if the sample does not have either BAM file or Peak BED file, then just leave the cell blank. (columns listed below are mandatory for pipeline. For convenience, you can also add more columns as above example output metadata table):
 | Condition               | Antibody | BAM          | Peak_BED         |
 |-------------------------|----------|--------------|------------------|
 | condition of the sample | antibody used in ChIP assay  | pathway to the BAM file of its ChIP-seq| pathway to the peak BED file by calling peaks on this sample|
+
+If all samples use same Peak_BED file/files, then you can ignore this column and input path to peak bed files in `create_frip_table_config.yml`
 
 
 
@@ -142,7 +144,7 @@ python create_frip_table.py config/create_frip_table_config.yml
  
 <center>
 
-| FRiP              | Organism      | Celltype | Treatment | Antibody | Peak BED | author_year   | SRUN       | peaks-SRA   | GEO       | Experiment              | FRiP enrichment | #Peaks | Total #basepairs in peaks | Total #reads |
+| FRiP              | Organism      | Celltype | Treatment | Antibody | Peak_protein | Author_year   | SRUN       | Peak-SRUN   | GEO       | Experiment              | FRiP enrichment | #Peaks | Total #basepairs in peaks | Total #reads |
 |-------------------|---------------|----------|-----------|----------|----------|---------------|------------|-------------|-----------|-------------------------|-----------------|--------|----------------------------|--------------|
 | 0.11113138926362592 | Homo sapiens | Hap1     | SCC4KO    | CTCF     | CTCF     | Haarhuis_2017 | SRR5266528 | SRR5266528  | GSE90994  | SCC4KO CTCF ChIPseq     | 27.17470160067354 | 37415  | 12677501                   | 19977713     |
 | 0.00698026098917694 | Homo sapiens | Hap1     | SCC4KO    | IgG      | CTCF     | Haarhuis_2017 | SRR5266524 | SRR5266528  | GSE90994  | SCC4KO IgG ChIPseq      | 1.7068670762832925 | 37415  | 12677501                   | 14485275     |

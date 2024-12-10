@@ -1,15 +1,17 @@
 import pysam
 import pandas as pd
+import numpy as np
 import os
 import subprocess
 import json
 import bioframe as bf
-import deeptools.countReadsPerBin as crpb
+from multiprocessing import Pool
+from functools import partial
 
 pysam.set_verbosity(0)
 
 
-# Helper function
+####### Helper function #######
 def fetch_metadata(accession):
     # Use subprocess to run ffq and capture the output
     result = subprocess.run(["ffq", accession], capture_output=True, text=True)
@@ -18,6 +20,46 @@ def fetch_metadata(accession):
         return None
     return json.loads(result.stdout)
 
+def _reads_in_chrom_peak(bam, peaks, chrom):
+        alignments = bf.read_alignments(bam, chrom)
+        alignments = alignments.rename(columns={"POS": "start"})
+        alignments["chrom"] = chrom
+        alignments["end"] = alignments["start"] + alignments["SEQ"].apply(len)
+
+        return bf.count_overlaps(alignments, peaks).iloc[:,-1].tolist()
+
+def count_reads_in_peak(bam, peaks, nproc=2):
+    chromosomes = peaks['chrom'].unique()
+
+    if nproc > len(chromosomes):
+        nproc = len(chromosomes)
+    
+    with Pool(processes=nproc) as pool:
+        results = pool.map(partial(_reads_in_chrom_peak, bam, peaks), chromosomes)
+        results = np.concatenate(results)
+
+    return np.sum(results > 0)
+
+    # cmd = [
+    #     "bedtools", "intersect",
+    #     "-a", bed,
+    #     "-b", bam,
+    #     "-c"
+    # ]
+    
+    # try:
+    #     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+    #     output_lines = result.stdout.strip().split("\n")
+    #     data = [line.split("\t") for line in output_lines]  # Split each line by tabs
+    #     counts_table = pd.DataFrame(data)
+        
+    #     return counts_table.iloc[:, -1].astype(int).to_numpy()
+    
+    # except subprocess.CalledProcessError as e:
+    #     print("Error running bedtools:", e.stderr)
+    #     raise
+
+############################
 
 def calculate_frip(bam, bed, nproc=40):
     alignment = pysam.AlignmentFile(bam)
@@ -31,13 +73,15 @@ def calculate_frip(bam, bed, nproc=40):
     distance_between_peaks[distance_between_peaks >= read_length] = read_length - 1
     outside_regions_for_reads_overlap_peaks = distance_between_peaks.sum()
 
-    reads_counter = crpb.CountReadsPerBin([bam], bedFile=bed, numberOfProcessors=nproc)
-    reads_at_peaks = reads_counter.run()
-    total_reads = alignment.mapped
-    total_reads_at_peaks = reads_at_peaks.sum(axis=0)
-    frip = float(total_reads_at_peaks[0]) / total_reads
+    # reads_counter = crpb.CountReadsPerBin([bam], bedFile=bed, numberOfProcessors=nproc)
+    # reads_at_peaks = reads_counter.run()
+    # total_reads_at_peaks = reads_at_peaks.sum(axis=0)
 
-    return frip, reads_at_peaks, total_reads, outside_regions_for_reads_overlap_peaks
+    total_reads_at_peaks = count_reads_in_peak(bam, peaks_table, nproc=nproc)
+    total_reads = alignment.mapped
+    frip = float(total_reads_at_peaks) / total_reads # floa can avoid automatical round
+
+    return frip, total_reads_at_peaks, total_reads, outside_regions_for_reads_overlap_peaks
 
 
 def create_frip_table_from_bed(
@@ -50,7 +94,6 @@ def create_frip_table_from_bed(
     peak_protein_srun="",
     customized_metadata=False
 ):
-  
 
     if customized_metadata:
         samples_metadata = samples_metadata[samples_metadata["BAM"] != ""]
@@ -72,15 +115,14 @@ def create_frip_table_from_bed(
     total_reads = []
     frip_enrich = []
     samples_frips = []
-    for bam in bams:
+    for idx, bam in enumerate(bams):
+        print(f"### bams: {idx + 1}/{len(bams)}")
         result = calculate_frip(bam, path_to_bed, nproc=nproc)
         samples_frips.append(result[0])
         total_reads.append(result[2])
         outside_regions_for_reads_overlap_peaks = result[3]
         expected_prob_read_in_peak = (total_bp_in_peaks[0] + outside_regions_for_reads_overlap_peaks) / genome_size
         frip_enrich.append(result[0] / expected_prob_read_in_peak) # This is the ratio of observed reads in peaks / expected reads in peaks
-        print(bam, f"frip calculation done:")
-        print(frip_enrich[-1])
 
     frip_df = pd.DataFrame({"FRiP": samples_frips})
     extra_df = pd.DataFrame(
@@ -95,6 +137,6 @@ def create_frip_table_from_bed(
     
     # replace GSM_accession column with peaks-SRA
     frip_df["GSM_accession"] = [peak_protein_srun] * len(frip_df)
-    frip_df = frip_df.rename(columns={"GSM_accession": "peaks-SRA"})
+    frip_df = frip_df.rename(columns={"GSM_accession": "Peak-SRUN"})
 
     return frip_df
