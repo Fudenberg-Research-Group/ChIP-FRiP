@@ -26,7 +26,12 @@ def _reads_in_chrom_peak(bam, peaks, chrom):
         alignments["chrom"] = chrom
         alignments["end"] = alignments["start"] + alignments["SEQ"].apply(len)
 
-        return bf.count_overlaps(alignments, peaks).iloc[:,-1].tolist()
+        try:
+             result = bf.count_overlaps(alignments, peaks).iloc[:,-1].tolist()
+        except TypeError:
+             result = np.array([])
+        
+        return result
 
 def count_reads_in_peak(bam, peaks, nproc=2):
     chromosomes = peaks['chrom'].unique()
@@ -72,10 +77,6 @@ def calculate_frip(bam, bed, nproc=40):
     distance_between_peaks = distance_between_peaks['distance'].to_numpy()
     distance_between_peaks[distance_between_peaks >= read_length] = read_length - 1
     outside_regions_for_reads_overlap_peaks = distance_between_peaks.sum()
-
-    # reads_counter = crpb.CountReadsPerBin([bam], bedFile=bed, numberOfProcessors=nproc)
-    # reads_at_peaks = reads_counter.run()
-    # total_reads_at_peaks = reads_at_peaks.sum(axis=0)
 
     total_reads_at_peaks = count_reads_in_peak(bam, peaks_table, nproc=nproc)
     total_reads = alignment.mapped

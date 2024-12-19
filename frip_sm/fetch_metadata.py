@@ -40,7 +40,7 @@ for i, a in enumerate(accessions):
         break
     experi_info = title[1].split(":")
     gsm.append(experi_info[0])
-    experi_infos.append(experi_info[1])
+    experi_infos.append(' '.join(experi_info[1:]))
     print(i, a, "title has been fetched")
 
 df = pd.DataFrame(
@@ -92,7 +92,7 @@ df["Antibody"] = antibody
 df["Celltype"] = celltype
 df["Organism"] = organism
 df["Peak_protein"] = ["N/A"] * len(df)
-df["author_year"] = [dataset] * len(df)
+df["Author_year"] = [dataset] * len(df)
 df["GEO"] = [geo_accession] * len(df)
 
 # reform dataframe
