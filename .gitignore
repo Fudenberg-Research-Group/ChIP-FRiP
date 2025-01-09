@@ -2,6 +2,7 @@ archive/
 records/
 Untitled.ipynb
 averaged_rad21.bigwig
+README_backup.md
 # ignore snakemake metadata
 .snakemake
 # Byte-compiled / optimized / DLL files
