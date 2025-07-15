@@ -45,27 +45,6 @@ def count_reads_in_peak(bam, peaks, nproc=2):
 
     return np.sum(results > 0)
 
-    # cmd = [
-    #     "bedtools", "intersect",
-    #     "-a", bed,
-    #     "-b", bam,
-    #     "-c"
-    # ]
-    
-    # try:
-    #     result = subprocess.run(cmd, capture_output=True, text=True, check=True)
-    #     output_lines = result.stdout.strip().split("\n")
-    #     data = [line.split("\t") for line in output_lines]  # Split each line by tabs
-    #     counts_table = pd.DataFrame(data)
-        
-    #     return counts_table.iloc[:, -1].astype(int).to_numpy()
-    
-    # except subprocess.CalledProcessError as e:
-    #     print("Error running bedtools:", e.stderr)
-    #     raise
-
-############################
-
 def calculate_frip(bam, bed, nproc=40):
     alignment = pysam.AlignmentFile(bam)
     read = next(alignment.fetch())
@@ -83,7 +62,6 @@ def calculate_frip(bam, bed, nproc=40):
     frip = float(total_reads_at_peaks) / total_reads # floa can avoid automatical round
 
     return frip, total_reads_at_peaks, total_reads, outside_regions_for_reads_overlap_peaks
-
 
 def create_frip_table_from_bed(
     samples_metadata,
