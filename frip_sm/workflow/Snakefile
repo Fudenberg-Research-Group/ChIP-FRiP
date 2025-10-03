@@ -19,9 +19,14 @@ if config["input"]["ChIP_input_table"] != '':
 index = config["input"]["bowtie_index"]
 process = config["common_params"]["processes"]
 include_spikein = config["common_params"]["include_spikein"]
+effective_genome_size = config["common_params"]["effective_genome_size"]
 index_primary = config["spikein_params"]["index_primary"]
 index_spikein = config["spikein_params"]["index_spikein"]
 binsize = config["bamcoverage_params"]["binsize"]
+blacklist = config["bamcoverage_params"]["blacklist"]
+if blacklist != "" :
+    blacklist = "--blackListFileName " + blacklist
+
 
 quality = config["samtools_params"]["quality"]
 distance = config["samtools_params"]["distance"]
@@ -384,7 +389,7 @@ rule bw:
     output:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.bw"
     shell:
-        "bamCoverage -b {input} -o {output} -of bigwig --binSize {binsize}"
+        "bamCoverage {blacklist} -b {input} -o {output} -of bigwig --binSize {binsize} --effectiveGenomeSize {effective_genome_size}"
 
 # create an unscaled bigwig file for spike-in
 rule spikein_bw:
@@ -395,7 +400,7 @@ rule spikein_bw:
     output:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.{index_primary}.bw"
     shell:
-        "bamCoverage -b {input} -o {output} -of bigwig --binSize {binsize}"
+        "bamCoverage {blacklist} -b {input} -o {output} -of bigwig --binSize {binsize} --effectiveGenomeSize {effective_genome_size}"
 
 # Spike-in Normalization
 rule rescaling:
@@ -413,7 +418,7 @@ rule rescaling:
         chip_input_spikein_reads=$(awk -F'=' '/{index_spikein}_reads/{{print $2}}' {input.chip_input_stats})
         factor=`echo "scale=20; $chip_input_spikein_reads / $chip_input_primary_reads / $spikein_reads * 15000000" | bc`
         echo "Scaling_factor=$factor" >> {input.chip_stats}
-        bamCoverage -b {input.chip_bam} -o {output} -of bigwig --binSize {binsize} --scaleFactor $factor
+        bamCoverage {blacklist} -b {input.chip_bam} -o {output} -of bigwig --binSize {binsize} --scaleFactor $factor --effectiveGenomeSize {effective_genome_size}
         """
 
 ##############################
@@ -434,9 +439,9 @@ rule bam_to_bed:
         num_files=${{#files[@]}}
 
         if [ "$num_files" -eq 1 ]; then
-            macs2 callpeak {broad_peaks_option} -t {input} -n {params.output_prefix} --outdir {params.output_dir}
+            macs2 callpeak {broad_peaks_option} -t {input} -n {params.output_prefix} --outdir {params.output_dir} --gsize {effective_genome_size} -q 0.05
         elif [ "$num_files" -eq 2 ]; then
-            macs2 callpeak {broad_peaks_option} -f BAMPE -t {input} -n {params.output_prefix} --outdir {params.output_dir}
+            macs2 callpeak {broad_peaks_option} -f BAMPE -t {input} -n {params.output_prefix} --outdir {params.output_dir} --gsize {effective_genome_size} -q 0.05
         fi
         """
 
@@ -456,8 +461,8 @@ rule bam_to_bed_wi:
         num_files=${{#files[@]}}
 
         if [ "$num_files" -eq 1 ]; then
-            macs2 callpeak {broad_peaks_option} -t {input.bam} -c {input.chip_input_file} -n {params.output_prefix} --outdir {params.output_dir}
+            macs2 callpeak {broad_peaks_option} -t {input.bam} -c {input.chip_input_file} -n {params.output_prefix} --outdir {params.output_dir} --gsize {effective_genome_size} -q 0.05
         elif [ "$num_files" -eq 2 ]; then
-            macs2 callpeak {broad_peaks_option} -f BAMPE -t {input.bam} -c {input.chip_input_file} -n {params.output_prefix} --outdir {params.output_dir}
+            macs2 callpeak {broad_peaks_option} -f BAMPE -t {input.bam} -c {input.chip_input_file} -n {params.output_prefix} --outdir {params.output_dir} --gsize {effective_genome_size} -q 0.05
         fi
         """

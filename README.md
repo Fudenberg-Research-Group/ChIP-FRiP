@@ -22,8 +22,8 @@ This repository additional provides scripts for:
 ```
 git clone https://github.com/Fudenberg-Research-Group/fastaFRiP.git
 cd fastaFRiP/frip_sm
-conda env create -f env/fastq_frip_env.yml -n fastq_frip_env
-conda activate fastq_frip_env
+conda env create -f env/fasta_frip_env.yml -n fasta_frip_env
+conda activate fasta_frip_env
 ```
 
 *All dependecies mentioned below are include in our conda environment, so you don't need to worry about any further installation :)*
@@ -46,7 +46,7 @@ grep "ChIP" SraRunTable.txt | awk -F, '{print $1}' > accessions.txt
 ```
 
 #### (Optional) ChIP & Input table for Peak Calling:
-To rescale the bigwig file and call peaks based on an input (control) sample, the pipeline requires a metadata table with two columns: ChIP and Input. 
+To rescale the bigwig file and call peaks based on an input (control) sample, the pipeline requires a metadata table (in tsv format) with two columns: ChIP and Input. 
 
 <center>
 
@@ -82,8 +82,8 @@ For spike-in ChIP-seq, you can use the following way to create a bowtie index fi
 gunzip GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz
 gunzip GCA_000001635.9_GRCm39_full_analysis_set.fna.gz
 
-sed -i '1s/^>/>hg38_/' GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
-sed -i '1s/^>/>mm39_/' GCA_000001635.9_GRCm39_full_analysis_set.fna
+sed -i 's/^>/>hg38_/' GCA_000001405.15_GRCh38_no_alt_analysis_set.fna
+sed -i 's/^>/>mm39_/' GCA_000001635.9_GRCm39_full_analysis_set.fna
 
 cat GCA_000001405.15_GRCh38_no_alt_analysis_set.fna GCA_000001635.9_GRCm39_full_analysis_set.fna > hg38_mm39.fna
 mkdir hg38_mm39
@@ -95,12 +95,12 @@ bowtie2-build ../hg38_mm39.fna hg38_mm39.bowtie_index
 
 ### Modify Configuration file of snakemake
 Specify the locations of your input files (FASTQ and Bowtie index files) and output files, and choose whether to include spike-in normalization in the configuration file `config.yml`. Detailed explanations for each parameter are included in config.yml. 
-If the experiment includes spike-in, set 'include_spikein' to true, and set 'index_primary' and 'index_spikein' according to the experiment.
+If the experiment includes spike-in, set 'include_spikein' to true, and set 'index_primary' and 'index_spikein' according to the experiment (the name should be the same one you used for creating bowtie2 index files, e.g. "hg38" used in bowtie2 index files, then put "hg38" here as well).
 
 
 ### Generating BAM/BED files
 
-Once the configuration file is set up, run the following command in the terminal to generate the required BAM/BED files:
+Once the configuration file is set up, run the following command in the terminal (you can use "pwd" command line to make sure the current working directory is "frip_sm/") to generate the required BAM/BED files:
 
 ```
 snakemake --use-conda --cores $Ncores --configfile config/config.yml
@@ -147,4 +147,6 @@ python create_frip_table.py config/create_frip_table_config.yml
 | 0.00698026098917694 | Homo sapiens | Hap1     | SCC4KO    | IgG      | CTCF     | Haarhuis_2017 | SRR5266524 | SRR5266528  | GSE90994  | SCC4KO IgG ChIPseq      | 1.7068670762832925 | 37415  | 12677501                   | 14485275     |
 </center>
 
-       
+## File dictionary for customized downstream tasks
+
+      
