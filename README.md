@@ -1,11 +1,11 @@
-# fastaFRiP
+# ChIP-FRiP
 
 ## Description
 This is a pipeline for calculating FRiP ("fraction of reads in peaks") from FASTQ.
 
 This involves mapping and filtering FASTQ to generate bam files (with bowtie2 and samtools), calling peaks (with macs2). FRiP is then calculated from the bam files and bed files. Publicly-available datasets provide FASTQ files, however, bam files are often not provided, yet essential for calculating FRiP.
 
-The fastaFRiP pipeline can be used to process ChIP-seq datasets that are:
+The ChIP-FRiP pipeline can be used to process ChIP-seq datasets that are:
 - spike-in or not spike-in
 - single-end or paired-end 
 - with input or with no input
@@ -20,10 +20,10 @@ This repository additional provides scripts for:
 
 ## Installation
 ```
-git clone https://github.com/Fudenberg-Research-Group/fastaFRiP.git
-cd fastaFRiP/frip_sm
-conda env create -f env/fasta_frip_env.yml -n fasta_frip_env
-conda activate fasta_frip_env
+git clone https://github.com/Fudenberg-Research-Group/ChIP-FRiP.git
+cd ChIP-FRiP/ChIP-FRiP
+conda env create -f env/chip_frip_env.yml -n chip_frip_env
+conda activate chip_frip_env
 ```
 
 *All dependecies mentioned below are include in our conda environment, so you don't need to worry about any further installation :)*
