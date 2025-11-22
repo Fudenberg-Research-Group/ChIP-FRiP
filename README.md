@@ -1,11 +1,11 @@
-# fastaFRiP
+# ChIP-FRiP
 
 ## Description
 This is a pipeline for calculating FRiP ("fraction of reads in peaks") from FASTQ.
 
 This involves mapping and filtering FASTQ to generate bam files (with bowtie2 and samtools), calling peaks (with macs2). FRiP is then calculated from the bam files and bed files. Publicly-available datasets provide FASTQ files, however, bam files are often not provided, yet essential for calculating FRiP.
 
-The fastaFRiP pipeline can be used to process ChIP-seq datasets that are:
+The ChIP-FRiP pipeline can be used to process ChIP-seq datasets that are:
 - spike-in or not spike-in
 - single-end or paired-end 
 - with input or with no input
@@ -20,10 +20,10 @@ This repository additional provides scripts for:
 
 ## Installation
 ```
-git clone https://github.com/Fudenberg-Research-Group/fastaFRiP.git
-cd fastaFRiP/frip_sm
-conda env create -f env/fasta_frip_env.yml -n fasta_frip_env
-conda activate fasta_frip_env
+git clone https://github.com/Fudenberg-Research-Group/ChIP-FRiP.git
+cd ChIP-FRiP/ChIP-FRiP
+conda env create -f env/chip_frip_env.yml -n chip_frip_env
+conda activate chip_frip_env
 ```
 
 *All dependecies mentioned below are include in our conda environment, so you don't need to worry about any further installation :)*
@@ -147,6 +147,16 @@ python create_frip_table.py config/create_frip_table_config.yml
 | 0.00698026098917694 | Homo sapiens | Hap1     | SCC4KO    | IgG      | CTCF     | Haarhuis_2017 | SRR5266524 | SRR5266528  | GSE90994  | SCC4KO IgG ChIPseq      | 1.7068670762832925 | 37415  | 12677501                   | 14485275     |
 </center>
 
-## File dictionary for customized downstream tasks
+## Files for customized downstream analyses
+| File extension               | Usage |
+|-------------------------|----------|
+| .narrowPeak | this file records genomic regions contain identified peaks, which can be used for customized FRiP calculation   |
+| .<index_primary>.sort.bam | **(with spike-in)** this is the alignment file in binary format, which can be used for customized bigwig generation and peak calling |
+| .dedup.bam | **(non spike-in)** this is the alignment file in binary format, which can be used for customized bigwig generation and peak calling  |
 
+
+For example, if you want to analyze a non spike-in sample with customized macs2/macs3 parameters:
+'''
+ macs2 callpeak --broad -t filename.dedup.bam -n output_filename_prefix --outdir output_directory/ --gsize 2652783500 -q 0.05
+'''
       

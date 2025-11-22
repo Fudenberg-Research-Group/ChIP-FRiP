@@ -19,6 +19,7 @@ spikein_params:
 bamcoverage_params:
     binsize: 20 # Size of the bins, in bases, for the output of the bigwig/bedgraph file.
     blacklist: '../data/mm10-blacklist.v2.fixed.bed' # Leave it blank ('') if there is no blacklist regions. A list of target species's genomic coordinates that identifies regions known to yield unreliable signals (you can find some blacklists here https://github.com/Boyle-Lab/Blacklist/tree/master/lists)    
+    extendReads: 0
 
 macs2_params:
     broad: false # If true, then MACS2 will call broad peaks (Narrow peaks are typically associated with transcription factors)
