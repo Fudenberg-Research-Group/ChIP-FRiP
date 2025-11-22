@@ -147,6 +147,16 @@ python create_frip_table.py config/create_frip_table_config.yml
 | 0.00698026098917694 | Homo sapiens | Hap1     | SCC4KO    | IgG      | CTCF     | Haarhuis_2017 | SRR5266524 | SRR5266528  | GSE90994  | SCC4KO IgG ChIPseq      | 1.7068670762832925 | 37415  | 12677501                   | 14485275     |
 </center>
 
-## File dictionary for customized downstream tasks
+## Files for customized downstream analyses
+| File extension               | Usage |
+|-------------------------|----------|
+| .narrowPeak | this file records genomic regions contain identified peaks, which can be used for customized FRiP calculation   |
+| .<index_primary>.sort.bam | **(with spike-in)** this is the alignment file in binary format, which can be used for customized bigwig generation and peak calling |
+| .dedup.bam | **(non spike-in)** this is the alignment file in binary format, which can be used for customized bigwig generation and peak calling  |
 
+
+For example, if you want to analyze a non spike-in sample with customized macs2/macs3 parameters:
+'''
+ macs2 callpeak --broad -t filename.dedup.bam -n output_filename_prefix --outdir output_directory/ --gsize 2652783500 -q 0.05
+'''
       
