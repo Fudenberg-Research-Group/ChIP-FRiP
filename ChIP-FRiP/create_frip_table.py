@@ -4,6 +4,7 @@ import glob
 import os
 import argparse
 import warnings
+import bioframe as bf
 from utils import create_frip_table_from_bed
 
 GENOME_SIZE = {"hg38": 3.1*10**9, "mm39": 2.7*10**9, "mm10": 2.7*10**9}
@@ -25,6 +26,7 @@ nproc = config["parameters"]["nproc"]
 path_to_metadata = config["input"]["path_to_metadata"]
 path_to_data = config["input"]["path_to_data"]
 path_to_bed = config["input"]["path_to_bed"]
+path_to_blacklist = config["input"]["path_to_blacklist"]
 
 output_dir = config["output"]["output_directory"]
 ######## Create metadata table #########################################################
@@ -51,6 +53,11 @@ else:
     
 bed_filenames = [f"{p.split('/')[-1].split('.')[0]}" for p in path_to_bed]
 bed_filename = "&".join(bed_filenames)
+
+if path_to_blacklist == '':
+    blacklist = None
+else:
+    blacklist = bf.read_table(path_to_blacklist, schema='bed').iloc[:, :3]
 
 frip_tables = []
 for idx, condition in enumerate(conditions):
@@ -95,6 +102,7 @@ for idx, condition in enumerate(conditions):
             nproc,
             peak_protein_srun=peak_protein_sruns[i],
             customized_metadata=customized_metadata,
+            blacklist=blacklist
         )
         frip_dfs.append(frip_df)
     

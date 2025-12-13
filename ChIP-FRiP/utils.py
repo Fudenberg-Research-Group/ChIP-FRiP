@@ -45,23 +45,40 @@ def count_reads_in_peak(bam, peaks, nproc=2):
 
     return np.sum(results > 0)
 
-def calculate_frip(bam, bed, nproc=40):
+def calculate_frip(bam, peaks_table, blacklist=None, nproc=40):
     alignment = pysam.AlignmentFile(bam)
     read = next(alignment.fetch())
     read_length = read.query_length
-    peaks_table = bf.read_table(bed, schema='bed').iloc[:,:3]
 
+    total_reads = alignment.mapped
+
+    if blacklist is not None:
+        # Merging ensures we don't double-count reads in overlapping blacklist regions.
+        blacklist_merged = bf.merge(blacklist)
+
+        reads_in_blacklist = 0
+        for _, row in blacklist_merged.iterrows():
+            # pysam.count is efficient for fetching specific regions
+            reads_in_blacklist += alignment.count(
+                contig=row['chrom'], 
+                start=row['start'], 
+                stop=row['end']
+            )
+        total_reads = total_reads - reads_in_blacklist
+        if total_reads <= 0:
+            raise ValueError("No reads remain after blacklist filtering")
+
+    total_reads_at_peaks = count_reads_in_peak(bam, peaks_table, nproc=nproc)
+    frip = float(total_reads_at_peaks) / total_reads # floa can avoid automatical round
+
+    # Calculate total flank region width within which a read can still be considered overlapping with the peak
     distance_between_peaks = bf.closest(peaks_table, None)
     distance_between_peaks[distance_between_peaks['distance'].isna()] = read_length # NA is because there is no peaks within the same scaffold or chromosome, so we set the distance to read_length for the below process
     distance_between_peaks = distance_between_peaks['distance'].to_numpy()
     distance_between_peaks[distance_between_peaks >= read_length] = read_length - 1
-    outside_regions_for_reads_overlap_peaks = distance_between_peaks.sum()
+    flank_regions_for_reads_overlap_peaks = distance_between_peaks.sum()
 
-    total_reads_at_peaks = count_reads_in_peak(bam, peaks_table, nproc=nproc)
-    total_reads = alignment.mapped
-    frip = float(total_reads_at_peaks) / total_reads # floa can avoid automatical round
-
-    return frip, total_reads_at_peaks, total_reads, outside_regions_for_reads_overlap_peaks
+    return frip, total_reads_at_peaks, total_reads, flank_regions_for_reads_overlap_peaks
 
 def create_frip_table_from_bed(
     samples_metadata,
@@ -71,7 +88,8 @@ def create_frip_table_from_bed(
     species,
     nproc,
     peak_protein_srun="",
-    customized_metadata=False
+    customized_metadata=False,
+    blacklist=None
 ):
 
     if customized_metadata:
@@ -85,22 +103,27 @@ def create_frip_table_from_bed(
             suffix = "dedup"
         bams = [f"{path_to_data}/{sample}/{sample}.q30.{suffix}.bam" for sample in sruns]
 
-    peaks = bf.read_table(path_to_bed, schema="bed").iloc[:, :3]
-    num_peaks = [peaks.shape[0]] * len(bams)
-    peaks_width = peaks["end"] - peaks["start"]
-    total_bp_in_peaks = [peaks_width.sum()] * len(bams)
-
+    peaks_table = bf.read_table(path_to_bed, schema="bed").iloc[:, :3]
+    if blacklist is not None:
+        peaks_table = bf.subtract(peaks_table, blacklist)
+        # Ensure no invalid intervals remain (when start >= end) after subtraction
+        peaks_table = peaks_table[peaks_table['end'] > peaks_table['start']].copy()
+        if peaks_table.empty:
+            raise ValueError("No peaks remain after blacklist filtering")
+    num_peaks = [peaks_table.shape[0]] * len(bams)
+    # count basepairs within peaks
+    total_bp_in_peaks = (peaks_table["end"] - peaks_table["start"]).sum() + len(peaks_table) # include the basepair at start
 
     total_reads = []
     frip_enrich = []
     samples_frips = []
     for idx, bam in enumerate(bams):
         print(f"### bams: {idx + 1}/{len(bams)}")
-        result = calculate_frip(bam, path_to_bed, nproc=nproc)
+        result = calculate_frip(bam, peaks_table, blacklist=blacklist, nproc=nproc)
         samples_frips.append(result[0])
         total_reads.append(result[2])
-        outside_regions_for_reads_overlap_peaks = result[3]
-        expected_prob_read_in_peak = (total_bp_in_peaks[0] + outside_regions_for_reads_overlap_peaks) / genome_size
+        flank_regions_for_reads_overlap_peaks = result[3]
+        expected_prob_read_in_peak = (total_bp_in_peaks[0] + flank_regions_for_reads_overlap_peaks) / genome_size
         frip_enrich.append(result[0] / expected_prob_read_in_peak) # This is the ratio of observed reads in peaks / expected reads in peaks
 
     frip_df = pd.DataFrame({"FRiP": samples_frips})
