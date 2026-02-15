@@ -57,7 +57,14 @@ if index_spikein != "" and index_spikein != None:
 # Helper functions
 ########################
 def get_chipseq_input_path(wildcards):
-    input_sample_name = chip_input_table[chip_input_table.ChIP == wildcards.sample_name]['Input'].iloc[0]  
+    row = chip_input_table[chip_input_table.ChIP == wildcards.sample_name]
+    if row.empty:
+        raise ValueError(f"Sample {wildcards.sample_name} not found in ChIP_input_table")
+    
+    input_sample_name = row['Input'].iloc[0]
+    if pd.isna(input_sample_name):
+        raise ValueError(f"No input sample specified for {wildcards.sample_name}")
+    
     input_file = f"{wildcards.pathway_to_folder}/{input_sample_name}/{input_sample_name}.q{quality}.{wildcards.type}.bam" 
     
     return input_file
