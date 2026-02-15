@@ -2,7 +2,7 @@
 # Calling peaks
 ##############################
 
-rule bam_to_bed:
+rule call_peaks:
     input:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{{type}}.bam"
     params:
@@ -23,7 +23,7 @@ rule bam_to_bed:
         fi
         """
 
-rule bam_to_bed_wi:
+rule call_peaks_with_input:
     input:
         bam = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{{type}}.bam",
         chip_input_file = lambda wildcards: get_chipseq_input_path(wildcards),
