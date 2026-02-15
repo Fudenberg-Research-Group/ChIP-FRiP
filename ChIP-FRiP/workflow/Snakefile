@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 # Set the prefix to activate the conda environment
-shell.prefix("source $(conda info --base)/etc/profile.d/conda.sh && conda activate fastq_frip_env && ")
+shell.prefix("source $(conda info --base)/etc/profile.d/conda.sh && conda activate chip_frip_env && ")
 
 ###############
 # Input
