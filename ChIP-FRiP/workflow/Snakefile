@@ -4,7 +4,7 @@ import os
 import pandas as pd
 
 # Set the prefix to activate the conda environment
-shell.prefix("source $(conda info --base)/etc/profile.d/conda.sh && conda activate chip_frip_env && ")
+shell.prefix("source $(conda info --base)/etc/profile.d/conda.sh && conda activate fastq_frip_env && ")
 
 ###############
 # Input
@@ -17,11 +17,11 @@ if config["input"]["ChIP_input_table"] != '':
 # Parameters
 ###############
 index = config["input"]["bowtie_index"]
-process = config["common_params"]["processes"]
+num_processes = config["common_params"]["num_processes"]
 include_spikein = config["common_params"]["include_spikein"]
 effective_genome_size = config["common_params"]["effective_genome_size"]
-index_primary = config["spikein_params"]["index_primary"]
-index_spikein = config["spikein_params"]["index_spikein"]
+primary_assembly = config["spikein_params"]["primary_assembly"]
+spikein_assembly = config["spikein_params"]["spikein_assembly"]
 binsize = config["bamcoverage_params"]["binsize"]
 
 
@@ -46,12 +46,12 @@ if not os.path.exists(chip_result_folder):
 # Input validation
 ########################
 if include_spikein:
-    if index_spikein == "" or index_spikein == None:
-        raise ValueError("if you include spikein procedure, then index_spikein need to be spcified")
+    if spikein_assembly == "" or spikein_assembly == None:
+        raise ValueError("if you include spikein procedure, then spikein_assembly need to be spcified")
 
-if index_spikein != "" and index_spikein != None:
+if spikein_assembly != "" and spikein_assembly != None:
     if not include_spikein:
-        raise ValueError("Since index_spikein is spcified, <include_spikein> parameter should be set to true")
+        raise ValueError("Since spikein_assembly is spcified, <include_spikein> parameter should be set to true")
 
 ########################
 # Helper functions
@@ -102,7 +102,6 @@ def is_paired_end(sample_name):
 #############################################
 # Create lists of output filenames
 #############################################
-# q: would this be more readable in an if/else statement for paired/single end?
 sample_filenames = glob.glob(chip_fastqs_path+'/*.fastq*')
 fastq_filename_pattern = r"(_[12])?\.fastq.*"
 samples = [re.sub(fastq_filename_pattern, '', s.split('/')[-1]) for s in sample_filenames]
@@ -146,23 +145,23 @@ if include_spikein:
         )
 
     primary_sort_bam = expand(
-            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort.bam",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.sort.bam",
             sample_name=samples
         )
 
     spikein_sort_bam = expand(
-            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_spikein}.sort.bam",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{spikein_assembly}.sort.bam",
             sample_name=samples
         )
     if config["input"]["ChIP_input_table"] == '' :
         bw = expand(
-            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.{index_primary}.bw",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.{primary_assembly}.bw",
             sample_name=samples
         )
         bw_with_input = []
 
         peaks_bed = expand(
-            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort_peaks.narrowPeak",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.sort_peaks.narrowPeak",
             sample_name=samples
         )
         peaks_bed_with_input = []
@@ -171,19 +170,19 @@ if include_spikein:
         have_input = [s for s in samples if s in chip_input_table['ChIP'].unique()]
         no_input = [s for s in samples if s not in chip_input_table['ChIP'].unique()]
         bw = expand(
-                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.{index_primary}.rescale.bw",
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.{primary_assembly}.rescale.bw",
                 sample_name=have_input
             )
         bw_with_input = expand(
-                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.{index_primary}.bw",
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.{primary_assembly}.bw",
                 sample_name=no_input
             )
         peaks_bed = expand(
-                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort_peaks.narrowPeak",
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.sort_peaks.narrowPeak",
                 sample_name=no_input
             )
         peaks_bed_with_input = expand(
-                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{index_primary}.sort.withinput_peaks.narrowPeak",
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.sort.withinput_peaks.narrowPeak",
                 sample_name=have_input
             )
 else:
@@ -191,8 +190,8 @@ else:
     primary_sort_bam = []
     spikein_sort_bam = []
     bw_with_input = []
-    index_primary = "no_primary"
-    index_spikein = "no_spikein"
+    primary_assembly = "no_primary"
+    spikein_assembly = "no_spikein"
     bw = expand(
             f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.bw",
             sample_name=samples

@@ -8,7 +8,7 @@ rule call_peaks:
     params:
         output_prefix = f"{{sample_name}}.q{quality}.{{type}}", 
         output_dir = f"{{pathway_to_folder}}/{{sample_name}}/",
-        fastq_files = lambda wildcards: get_fastq_paths(wildcards) # q: can this be done as get_fastq_paths(wildcards, chip_fastqs_input)?
+        fastq_files = lambda wildcards: get_fastq_paths(wildcards)
     output:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{{type}}_peaks.narrowPeak"
     shell:

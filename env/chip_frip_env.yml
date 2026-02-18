@@ -4,7 +4,6 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  # Core Python
   - python=3.10
   - pip
 
@@ -13,11 +12,8 @@ dependencies:
   - bowtie2
   - samtools
   - htslib
-  - bedtools
   - fastqc
   - fastp
-  - cutadapt
-  - trim-galore
   - sra-tools
 
   - pandas
@@ -27,9 +23,6 @@ dependencies:
   - plotly
   - jupyter
   - pyyaml
-
-  - deeptools
-  - pybedtools
   - pybigwig
   - pysam
   - bioframe

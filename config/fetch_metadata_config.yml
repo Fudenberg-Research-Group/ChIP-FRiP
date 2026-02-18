@@ -1,9 +1,9 @@
 parameters:
-  dataset : 'Haarhuis_2017' # Name of dataset you want to show on the metadata table
+  dataset : 'Yu_2022' # Name of dataset you want to show on the metadata table
   geo_accession : 'GSE90994' # GEO accession number of dataset you want to show on the metadata table
 
 input:
-  path_to_accessions : '/proj/frip_sm_data/download_fastq/Haarhuis_2017/accessions.txt' # Path to a txt file that records a list of sample accessions
+  path_to_accessions : '../data/download_fastq/Yu_2022/accessions.txt' # Path to a txt file that records a list of sample accessions
 
 output:
-  output_directory : 'test_frip_sm_data/frip_result/Haarhuis_2017/'
+  output_directory : '../data/metadata/Yu_2022/'
