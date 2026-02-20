@@ -145,12 +145,12 @@ if include_spikein:
         )
 
     primary_sort_bam = expand(
-            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.sort.bam",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.dedup.bam",
             sample_name=samples
         )
 
     spikein_sort_bam = expand(
-            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{spikein_assembly}.sort.bam",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{spikein_assembly}.dedup.bam",
             sample_name=samples
         )
     if config["input"]["ChIP_input_table"] == '' :

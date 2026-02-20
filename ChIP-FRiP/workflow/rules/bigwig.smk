@@ -19,7 +19,7 @@ rule bw:
 # create an unscaled bigwig file for spike-in
 rule spikein_bw:
     input:
-        f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.sort.bam"
+        f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.dedup.bam"
     wildcard_constraints:
         sample_name="[^.]+"
     output:
@@ -35,7 +35,7 @@ rule rescaling:
     input:
         chip_stats = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.spikein.stats",
         chip_input_stats = lambda wildcards: get_chipseq_input_spikestats_path(wildcards),
-        chip_bam = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.sort.bam"
+        chip_bam = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.dedup.bam"
     output:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.{primary_assembly}.rescale.bw"
     params:

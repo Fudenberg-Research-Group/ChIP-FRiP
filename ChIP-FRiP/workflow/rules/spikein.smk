@@ -28,8 +28,8 @@ rule separate_reads:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.dedup.bam"
     threads: process
     output:
-        output1 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.sort.bam",
-        output2 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{spikein_assembly}.sort.bam"
+        output1 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.dedup.bam",
+        output2 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{spikein_assembly}.dedup.bam"
     shell:
         """
         samtools view -h {input} | \
