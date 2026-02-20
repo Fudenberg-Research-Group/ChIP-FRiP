@@ -144,12 +144,12 @@ if include_spikein:
             sample_name=samples
         )
 
-    primary_sort_bam = expand(
+    primary_dedup_bam = expand(
             f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.dedup.bam",
             sample_name=samples
         )
 
-    spikein_sort_bam = expand(
+    spikein_dedup_bam = expand(
             f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{spikein_assembly}.dedup.bam",
             sample_name=samples
         )
@@ -161,7 +161,7 @@ if include_spikein:
         bw_with_input = []
 
         peaks_bed = expand(
-            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.sort_peaks.narrowPeak",
+            f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.dedup_peaks.narrowPeak",
             sample_name=samples
         )
         peaks_bed_with_input = []
@@ -178,17 +178,17 @@ if include_spikein:
                 sample_name=no_input
             )
         peaks_bed = expand(
-                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.sort_peaks.narrowPeak",
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.dedup_peaks.narrowPeak",
                 sample_name=no_input
             )
         peaks_bed_with_input = expand(
-                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.sort.withinput_peaks.narrowPeak",
+                f"{chip_result_folder}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.dedup.withinput_peaks.narrowPeak",
                 sample_name=have_input
             )
 else:
     spikein_stats_files = []
-    primary_sort_bam = []
-    spikein_sort_bam = []
+    primary_dedup_bam = []
+    spikein_dedup_bam = []
     bw_with_input = []
     primary_assembly = "no_primary"
     spikein_assembly = "no_spikein"
@@ -224,8 +224,8 @@ rule all:
         sort_bam,
         dedup_bam,
         spikein_stats_files,
-        primary_sort_bam,
-        spikein_sort_bam,
+        primary_dedup_bam,
+        spikein_dedup_bam,
         bw,
         bw_with_input,
         peaks_bed,

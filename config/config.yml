@@ -25,7 +25,7 @@ macs2_params:
     broad: false # If true, then MACS2 will call broad peaks (Narrow peaks are typically associated with transcription factors)
 
 output:
-    ChIP_output_path: '../data/ChIP_alignment_outputs/Yu_2022/' # Pathway to the output directory
+    ChIP_output_path: '../data/ChIP_alignment_outputs/Yu_2022' # Pathway to the output directory
 
 ##########################################################################################################################################
 # Run the pipeline with: 
