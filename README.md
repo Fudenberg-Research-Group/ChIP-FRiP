@@ -73,8 +73,12 @@ Sample names should match those in the FASTQ files (e.g., SRR5085155.fastq). Any
 ### Bowtie2 index files
 ChIP-FRiP uses [Bowtie2](https://github.com/BenLangmead/bowtie2) for alignment. For many genomes, bowtie2 index files can be obtained from NCBI or the UCSC genome browser. From NCBI, you can choose to use bowtie2 index files directly. Alternatively, download the reference genome to make your own bowtie2 index files.
 
-***Note:*** *For the walkthrough, please download the pre-made combined index for hg38 and mm10. 
-curl xxxx)*
+***Note:*** *For the walkthrough, please download the pre-made combined index for hg38 and mm10.* 
+```
+mkdir ../data/bowtie_index
+wget -P ../data/bowtie_index/ https://zenodo.org/records/18705752/files/hg38_mm10.tar.gz
+tar -xvzf ../data/bowtie_index/hg38_mm10.tar.gz -C ../data/bowtie_index/
+```
 
 <center>
 
