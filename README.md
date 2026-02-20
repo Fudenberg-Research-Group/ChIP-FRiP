@@ -92,6 +92,7 @@ tar -xvzf ../data/bowtie_index/hg38_mm10.tar.gz -C ../data/bowtie_index/
 For many genomes, pre-generated bowtie2 index files can be obtained from NCBI or the UCSC genome browser. From NCBI, you can choose to use bowtie2 index files directly. Alternatively, download the reference genome to make your own bowtie2 index files.
 
 <center>
+
 |        Species/File Type|       URL Link|
 |-----------:|-----------:|
 | hg38/reference genome |  [Link](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz)|
@@ -169,7 +170,8 @@ python fetch_metadata.py config/fetch_metadata_config.yml
 | Homo sapiens  | Hepatocarcinoma cells      |  PDS5B-dTAG     | CTCF (Millipore, 07-729)  | N/A       | Yu_2022   | SRR20664888  | GSM6402429    |  PDS5B-dTAG_DMSO_CTCF        |
 </center>
 
-**If you have your own BAM files**, you can also create a metadata table based on the below template. Columns listed below (Condition, Antibody, BAM, and Peak_BED) are mandatory for the pipeline, but more columns can be added as desired. Each row is one sample. If the sample does not have either BAM file or Peak BED file, then just leave the cell blank.
+**If you have your own BAM files**, you can also create a metadata table based on the below template. Columns listed below (Condition, Antibody, BAM, and Peak_BED) are mandatory for the pipeline, but more columns can be added as desired. Each row is one sample. 
+
 | Condition               | Antibody | BAM          | Peak_BED         |
 |-------------------------|----------|--------------|------------------|
 | condition of the sample | antibody used in ChIP assay  | pathway to the BAM file of its ChIP-seq| pathway to the peak BED file by calling peaks on this sample|
