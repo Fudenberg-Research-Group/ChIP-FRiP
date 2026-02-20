@@ -1,7 +1,7 @@
 # ChIP-FRiP
 
 ## Description
-ChIP-FRiP provides a Snakemake pipeline for calculating FRiP ("Fraction of Reads in Peaks") from FASTQ. FRiP is calculated from a BAM (Binary Alignment Map) file and a BED (Browser Extensible Data) file. Publicly-available datasets provide FASTQ files. However, BAM files are often not provided, yet essential for calculating FRiP. The ChIP-FRiP pipeline thus covers: mapping and filtering FASTQ files to generate BAM files (with [Bowtie2](https://github.com/BenLangmead/bowtie2) and [SAMtools](https://github.com/samtools/samtools)) and calling peaks (with [MACS2](https://github.com/macs3-project/MACS)) to generate BED files. 
+ChIP-FRiP provides a Snakemake pipeline for calculating FRiP ("Fraction of Reads in Peaks") from FASTQ, specifically for enabling the fraction of reads for one protein of interest in the peaks of another protein. FRiP is calculated from a BAM (Binary Alignment Map) file and a BED (Browser Extensible Data) file. Publicly-available datasets provide FASTQ files. However, BAM files are often not provided, yet essential for calculating FRiP. The ChIP-FRiP pipeline thus covers: mapping and filtering FASTQ files to generate BAM files (with [Bowtie2](https://github.com/BenLangmead/bowtie2) and [SAMtools](https://github.com/samtools/samtools)) and calling peaks (with [MACS2](https://github.com/macs3-project/MACS)) to generate BED files. 
 
 The ChIP-FRiP pipeline can be used to process ChIP-seq datasets that are:
 - spike-in or not spike-in
@@ -11,6 +11,8 @@ The ChIP-FRiP pipeline can be used to process ChIP-seq datasets that are:
 This repository additional provides scripts for:
 - managing metadata from SRA/GEO (via ffq)
 - computing FRiP (via bioframe)
+
+We provide examples for how cohesin positioning at CTCF peaks can be computed programmatically with ChIP-FRiP in the walkthrough below.
 
 ## Figure
 <img src="docs/figures/fig1a.png" alt="ChIP-FRiP workflow diagram (a)" style="width:30%; max-width:220px; vertical-align:top; display:inline-block;" />&nbsp;<img src="docs/figures/fig1e.png" alt="ChIP-FRiP workflow diagram (e)" style="width:100%; max-width:550px; vertical-align:top; display:inline-block;" />
@@ -27,7 +29,7 @@ conda env create -f ../env/chip_frip_env.yml -n chip_frip_env
 conda activate chip_frip_env
 ```
 
-*All dependencies mentioned below are included in our conda environment, so you don't need to worry about any further installation :)*
+*All dependencies mentioned below are included in our conda environment, and should not require any further installation :)*
 
 # Walkthrough
 Usage of ChIP-FRiP has three stages: (1) preparation of input data and configuration files, (2) running the snakemake workflow to generate BED and BAM files, (3) and generating FRiP tables from these workflow outputs.
@@ -39,7 +41,11 @@ FASTQ data is available in the Gene Expression Omnibus (GEO). FASTQ is a common 
 
 <img src="docs/figures/sra_selector_location.jpg" alt="ChIP-FRiP workflow diagram (e)" style="width:100%; max-width:550px; vertical-align:top; display:inline-block;" />
 
-To quickly access the accession codes for a particular ChIP-seq dataset, click "Metadata" button on the page to download "SraRunTable.txt" **(example SraRunTable.txt is provided in data/ folder)**. 
+To quickly access the accession codes for a particular ChIP-seq dataset, click "Metadata" button on the page to download "SraRunTable.txt" 
+
+***Note:*** *For the walkthrough, we provide an example Metadata table from GEO: data/Yu_2022_SraRunTable.txt*
+
+**(an example SraRunTable.txt is provided in the  data/ folder)**. 
 
 <img src="docs/figures/metadata_location.png" alt="ChIP-FRiP workflow diagram (e)" style="width:100%; max-width:550px; vertical-align:top; display:inline-block;" />
 
@@ -52,11 +58,13 @@ grep "ChIP" ../data/Yu_2022_SraRunTable.txt | awk -F, '{print $1}' > ../data/acc
 ```
 bash ../scripts/batch_download.sh
 ```
+***Note:*** *These FASTQ files are ~10Gb each, so download may take a few minutes.*
 
-***Note:*** *we provide data/Yu_2022_ChIP_input_table.txt, which only cotains three example FASTQ files from Yu_2022 for this walkthrough*
 
 #### ChIP & Input table for Peak Calling:
 To rescale the bigwig file and call peaks based on an input (control) sample, the pipeline requires a metadata table (in tsv format) with two columns: ChIP and Input. 
+
+***Note:*** *For this walkthrough, we provide data/Yu_2022_ChIP_input_table.txt, which contains three example FASTQ files from the full Yu_2022 study *
 
 <center>
 
@@ -66,22 +74,24 @@ To rescale the bigwig file and call peaks based on an input (control) sample, th
 | SRR20664888 | SRR20664892 |
 </center>
 
-Sample names should match those in the FASTQ files (e.g., SRR5085155.fastq). Any samples that are not appear on the table will be recognized as samples without input automatically. 
+Sample names should match those in the FASTQ files (e.g., SRR20664892.fastq). Any samples that are not appear on the table will be recognized as samples without input automatically. 
 
-***Note:*** *to proceed with the walkthrough, you will need to generate a ChIP & Input table. However, this is generally optional for datasets that do not provide the input. A Python script for generating such a table is provided: [examples/generate_chip_input_table.ipynb](https://github.com/Fudenberg-Research-Group/ChIP-FRiP/tree/main/examples).*
+***Note:*** *The walkthrough uses the ChIP & Input table above. However, the pipeline also allows for processesing datasets that do not provide input files. A Python script for generating a ChIP Input table is provided: [examples/generate_chip_input_table.ipynb](https://github.com/Fudenberg-Research-Group/ChIP-FRiP/tree/main/examples).*
 
 ### Bowtie2 index files
-ChIP-FRiP uses [Bowtie2](https://github.com/BenLangmead/bowtie2) for alignment. For many genomes, bowtie2 index files can be obtained from NCBI or the UCSC genome browser. From NCBI, you can choose to use bowtie2 index files directly. Alternatively, download the reference genome to make your own bowtie2 index files.
+ChIP-FRiP uses [Bowtie2](https://github.com/BenLangmead/bowtie2) for alignment. 
 
-***Note:*** *For the walkthrough, please download the pre-made combined index for hg38 and mm10.* 
+***Note:*** *For the walkthrough, please download the pre-made combined index for hg38 and mm10. This is ~6 Gb, so download may take a few minutes.*
+* 
 ```
 mkdir -p ../data/bowtie_index
 wget -P ../data/bowtie_index/ https://zenodo.org/records/18705752/files/hg38_mm10.tar.gz
 tar -xvzf ../data/bowtie_index/hg38_mm10.tar.gz -C ../data/bowtie_index/
 ```
 
-<center>
+For many genomes, pre-generated bowtie2 index files can be obtained from NCBI or the UCSC genome browser. From NCBI, you can choose to use bowtie2 index files directly. Alternatively, download the reference genome to make your own bowtie2 index files.
 
+<center>
 |        Species/File Type|       URL Link|
 |-----------:|-----------:|
 | hg38/reference genome |  [Link](https://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz)|
