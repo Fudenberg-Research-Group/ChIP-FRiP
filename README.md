@@ -75,7 +75,7 @@ ChIP-FRiP uses [Bowtie2](https://github.com/BenLangmead/bowtie2) for alignment. 
 
 ***Note:*** *For the walkthrough, please download the pre-made combined index for hg38 and mm10.* 
 ```
-mkdir ../data/bowtie_index
+mkdir -p ../data/bowtie_index
 wget -P ../data/bowtie_index/ https://zenodo.org/records/18705752/files/hg38_mm10.tar.gz
 tar -xvzf ../data/bowtie_index/hg38_mm10.tar.gz -C ../data/bowtie_index/
 ```
