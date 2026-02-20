@@ -9,8 +9,8 @@ The ChIP-FRiP pipeline can be used to process ChIP-seq datasets that are:
 - with input or with no input
 
 This repository additional provides scripts for:
-- managing metadata from SRA/GEO (via ffq)
-- computing FRiP (via bioframe)
+- managing metadata from SRA/GEO (via [ffq](https://github.com/pachterlab/ffq))
+- computing FRiP (via [bioframe](https://github.com/open2c/bioframe))
 
 We provide examples for how cohesin positioning at CTCF peaks can be computed programmatically with ChIP-FRiP in the walkthrough below.
 
@@ -132,21 +132,23 @@ If the experiment includes spike-in, set 'include_spikein' to true, and set 'ind
 Once the configuration file is set up, run the following command in the terminal (you can use "pwd" command line to make sure the current working directory is "ChIP-FRiP/ChIP-FRiP/") to generate the required BAM/BED files:
 
 ```
-snakemake --use-conda --cores $Ncores --configfile ../config/config.yml
+snakemake --use-conda --cores [number of threads] --configfile ../config/config.yml
 ```
-Ensure that your computing resources are available.\
-  Tips: [Number of cores] = [number of jobs] * [number of process in config.yml]. And, [Number of cores] <= the total number of cpus you have
+Ensure that your computing resources are available.
 
-***Note:*** *ChIP-FRiP uses MACS2 and the default .narrowPeak extension for BED files*
+***Note:*** *[number of threads] = [number of jobs] * [number of processes in config.yml]. And, [numer of threads] <= the total number of threads you have. With [number of threads] = 50 and [number of processes in config.yml] = 10, it takes ~40 minutes to finish the Snakemake on the example data*
 
 ### Pipeline output
+
 | File extension               | Usage |
 |-------------------------|----------|
 | .narrowPeak | BED file of identified peaks   |
-| .<primary_assembly>.sort.bam | **(with spike-in)** alignment file in binary format, which can be used for bigwig generation and peak calling |
+| .<primary_assembly>.dedup.bam | **(with spike-in)** alignment file in binary format, which can be used for bigwig generation and peak calling |
 | .dedup.bam | **(non spike-in)** this is the alignment file in binary format  |
 
-\
+
+ChIP-FRiP uses MACS2 and the default .narrowPeak extension for BED files.
+
 ***Note:*** *BAM files can also be used for customized bigwig generation and peak calling.
 For example, if you want to analyze a non spike-in sample with customized macs2 parameters:*
 ```

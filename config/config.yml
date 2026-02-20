@@ -1,5 +1,5 @@
 input:
-    bowtie_index: '../data/bowtie_index/hg38_mm10/hg38_mm10_index' # Pathway to the bowtie index files, e.g.: **/path_to_index_directory/file_prefix
+    bowtie_index: '../data/bowtie_index/hg38_mm10/hg38_mm10' # Pathway to the bowtie index files, e.g.: **/path_to_index_directory/file_prefix
     ChIP_fastqs: '../data/fastq/' # Pathway to the ChIP fastq files
     ChIP_input_table: '../data/ChIP_input_table/Yu_2022_ChIP_input_table.txt' # Leave it blank ('') if there is no input(control) samples. Pathway to the chip_input_table that indicates the input(control) sample and the ChIP sample
 
@@ -26,9 +26,4 @@ macs2_params:
 
 output:
     ChIP_output_path: '../data/ChIP_alignment_outputs/Yu_2022' # Pathway to the output directory
-
-##########################################################################################################################################
-# Run the pipeline with: 
-#       snakemake --use-conda --cores 5 --configfile config/config.yml
-##########################################################################################################################################
    
