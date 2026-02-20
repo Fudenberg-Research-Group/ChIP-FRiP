@@ -26,7 +26,7 @@ rule spikein_stats:
 rule separate_reads:
     input:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.dedup.bam"
-    threads: process
+    threads: num_processes
     output:
         output1 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{primary_assembly}.dedup.bam",
         output2 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.{spikein_assembly}.dedup.bam"
