@@ -6,7 +6,7 @@ input:
 common_params:
     num_processes: 5 # Number of cpus will be used per task. If you set --cores when you run snakemake command line, processes should be <= cores set in the command line when run snakemake
     include_spikein: true # Whether the experiment inlcude the 
-    effective_genome_size: 2913022398 # The effective genome size of the target species 
+    effective_genome_size: 2913022398 # The effective genome size of the target species. You can find the pre-calculated effective genome size of common species here: https://deeptools.readthedocs.io/en/develop/content/feature/effectiveGenomeSize.html
 
 samtools_params:
     quality: 30 # Quality threshold for filtering bad mapped reads
