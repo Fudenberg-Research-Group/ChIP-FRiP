@@ -17,7 +17,6 @@ with open(args.config_path, "r") as f:
 ########################################################################
     
 dataset = config["parameters"]["dataset"]
-geo_accession = config["parameters"]["geo_accession"]
 
 path_to_accessions = config["input"]["path_to_accessions"]
 
@@ -93,7 +92,6 @@ df["Celltype"] = celltype
 df["Organism"] = organism
 df["Peak_protein"] = ["N/A"] * len(df)
 df["Author_year"] = [dataset] * len(df)
-df["GEO"] = [geo_accession] * len(df)
 
 # reform dataframe
 cols = [
@@ -105,7 +103,6 @@ cols = [
     "Author_year",
     "SRUN",
     "GSM_accession",
-    "GEO",
     "Experiment",
 ]
 

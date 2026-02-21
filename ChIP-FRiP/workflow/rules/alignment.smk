@@ -11,7 +11,7 @@ rule bowtie2_map:
         trimmed_fastq_path2 = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}_2.trimmed.fastq"
     wildcard_constraints:
         sample_name = "[a-zA-Z0-9_-]+"
-    threads: process
+    threads: num_processes
     output:
         temp(f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.sam")
     shell:
@@ -20,12 +20,12 @@ rule bowtie2_map:
         num_files=${{#files[@]}}
 
         if [ "$num_files" -eq 1 ]; then
-            fastp --thread {process} -i {input.files} -o {params.trimmed_fastq_path1}
-            bowtie2 -p {process} -x {index} -U {params.trimmed_fastq_path1} -S {output}
+            fastp --thread {num_processes} -i {input.files} -o {params.trimmed_fastq_path1}
+            bowtie2 -p {num_processes} -x {index} -U {params.trimmed_fastq_path1} -S {output}
             rm {params.trimmed_fastq_path1}
         elif [ "$num_files" -eq 2 ]; then
-            fastp --thread {process} -i {input.files[0]} -I {input.files[1]} -o {params.trimmed_fastq_path1} -O {params.trimmed_fastq_path2}
-            bowtie2 -p {process} -x {index} -1 {params.trimmed_fastq_path1} -2 {params.trimmed_fastq_path2}  -S {output}
+            fastp --thread {num_processes} -i {input.files[0]} -I {input.files[1]} -o {params.trimmed_fastq_path1} -O {params.trimmed_fastq_path2}
+            bowtie2 -p {num_processes} -x {index} -1 {params.trimmed_fastq_path1} -2 {params.trimmed_fastq_path2}  -S {output}
             rm {params.trimmed_fastq_path1} {params.trimmed_fastq_path2}
         fi
         """
@@ -36,11 +36,11 @@ rule samtools_filter:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.sam"
     wildcard_constraints:
         sample_name="[^.]+"
-    threads: process
+    threads: num_processes
     output:
         temp(f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}{{end_type}}.q{quality}.bam")
     shell:
-        "samtools view -F 1804 --threads {process} -h -q {quality} {input} > {output}"
+        "samtools view -F 1804 --threads {num_processes} -h -q {quality} {input} > {output}"
 
 # This is for paired-end fastq file only. Sort by reads name and then correctly remove secondary and unmapped reads
 rule samtools_fixmate:
@@ -50,12 +50,12 @@ rule samtools_fixmate:
         sorted_name = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.sorted.bam"
     wildcard_constraints:
         sample_name="[^.]+"
-    threads: process
+    threads: num_processes
     output:
         temp(f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.bam")
     shell:
         """
-        samtools sort -n -@{process} {input} -o {params.sorted_name}
+        samtools sort -n -@{num_processes} {input} -o {params.sorted_name}
         samtools fixmate -m -r {params.sorted_name} {output}
         rm {params.sorted_name}
         """
@@ -66,13 +66,13 @@ rule samtools_sort:
         f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.bam"
     wildcard_constraints:
         sample_name="[^.]+"
-    threads: process
+    threads: num_processes
     output:
         temp(f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.sort.bam")
     shell:
         """
-        samtools sort -@{process} {input} -o {output}
-        samtools index --threads {process} {output}
+        samtools sort -@{num_processes} {input} -o {output}
+        samtools index --threads {num_processes} {output}
         """
 
 # remove duplicate reads
@@ -83,11 +83,11 @@ rule samtools_markdup:
         stats_file_path = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.markdup.stats"
     wildcard_constraints:
         sample_name="[^.]+"
-    threads: process
+    threads: num_processes
     output:
         bam = f"{{pathway_to_folder}}/{{sample_name}}/{{sample_name}}.q{quality}.dedup.bam"
     shell:
         """
         samtools markdup -f {params.stats_file_path} -r -d {distance} {input} {output.bam}
-        samtools index --threads {process} {output.bam}
+        samtools index --threads {num_processes} {output.bam}
         """

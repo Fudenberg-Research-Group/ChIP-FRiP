@@ -1,34 +1,29 @@
 input:
-    bowtie_index: '/proj/frip_sm_data/bowtie_index/hg38_mm10/hg38_mm10_index' # Pathway to the bowtie index files, e.g.: **/path_to_index_directory/file_prefix
-    ChIP_fastqs: '/proj/frip_sm_data/download_fastq/Liu_2020' # Pathway to the ChIP fastq files
-    ChIP_input_table: '' # Leave it blank ('') if there is no input(control) samples. Pathway to the chip_input_table that indicates the input(control) sample and the ChIP sample
+    bowtie_index: '../data/bowtie_index/hg38_mm10/hg38_mm10' # Pathway to the bowtie index files, e.g.: **/path_to_index_directory/file_prefix
+    ChIP_fastqs: '../data/fastq/' # Pathway to the ChIP fastq files
+    ChIP_input_table: '../data/ChIP_input_table/Yu_2022_ChIP_input_table.txt' # Leave it blank ('') if there is no input(control) samples. Pathway to the chip_input_table that indicates the input(control) sample and the ChIP sample
 
 common_params:
-    processes: 5 # Number of cpus will be used per task. If you set --cores when you run snakemake command line, processes should be <= cores set in the command line when run snakemake
-    include_spikein: false # Whether the experiment inlcude the 
-    effective_genome_size: 2652783500 # The effective genome size of the target species 
+    num_processes: 5 # Number of cpus will be used per task. If you set --cores when you run snakemake command line, processes should be <= cores set in the command line when run snakemake
+    include_spikein: true # Whether the experiment inlcude the 
+    effective_genome_size: 2913022398 # The effective genome size of the target species. You can find the pre-calculated effective genome size of common species here: https://deeptools.readthedocs.io/en/develop/content/feature/effectiveGenomeSize.html
 
 samtools_params:
     quality: 30 # Quality threshold for filtering bad mapped reads
     distance: 100 # 100 for HiSeq style platforms or about 2500 for NovaSeq ones
 
 spikein_params:
-    index_primary: '' # Name of target species. Leave it blank ('') if spike-in is not included in the experiment. The name should be the same one you used for creating bowtie2 index files, e.g. "hg38" used in bowtie2 index files, then put "hg38" here as well
-    index_spikein: '' # Name of spike-in species. Leave it blank ('') if spike-in is not included in the experiment. The name should be the same one you used for creating bowtie2 index files, e.g. "hg38" used in bowtie2 index files, then put "hg38" here as well
+    primary_assembly: 'hg38' # Name of target species. Leave it blank ('') if spike-in is not included in the experiment. The name should be the same one you used for creating bowtie2 index files, e.g. "hg38" used in bowtie2 index files, then put "hg38" here as well
+    spikein_assembly: 'mm10' # Name of spike-in species. Leave it blank ('') if spike-in is not included in the experiment. The name should be the same one you used for creating bowtie2 index files, e.g. "hg38" used in bowtie2 index files, then put "hg38" here as well
 
 bamcoverage_params:
     binsize: 20 # Size of the bins, in bases, for the output of the bigwig/bedgraph file.
-    blacklist: '../data/mm10-blacklist.v2.fixed.bed' # Leave it blank ('') if there is no blacklist regions. A list of target species's genomic coordinates that identifies regions known to yield unreliable signals (you can find some blacklists here https://github.com/Boyle-Lab/Blacklist/tree/master/lists)    
+    blacklist: '../data/ENCODE_blacklists/hg38-blacklist.v2.bed' # Leave it blank ('') if there is no blacklist regions. A list of target species's genomic coordinates that identifies regions known to yield unreliable signals (you can find some blacklists here https://github.com/Boyle-Lab/Blacklist/tree/master/lists)    
     extendReads: 0
 
 macs2_params:
     broad: false # If true, then MACS2 will call broad peaks (Narrow peaks are typically associated with transcription factors)
 
 output:
-    ChIP_output_path: 'test_frip_sm_data/ChIP_fastqs_maps/' # Pathway to the output directory
-
-##########################################################################################################################################
-# Run the pipeline with: 
-#       snakemake --use-conda --cores 5 --configfile config/config.yml
-##########################################################################################################################################
+    ChIP_output_path: '../data/ChIP_alignment_outputs/Yu_2022' # Pathway to the output directory
    

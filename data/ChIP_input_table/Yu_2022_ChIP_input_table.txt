@@ -1,0 +1,3 @@
+ChIP	Input	Combination
+SRR20664887	SRR20664892	RAD21 (Abcam\, ab992) & Input
+SRR20664888	SRR20664892	CTCF (Millipore\, 07-729) & Input

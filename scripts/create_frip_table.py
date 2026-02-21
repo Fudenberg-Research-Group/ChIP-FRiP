@@ -7,8 +7,6 @@ import warnings
 import bioframe as bf
 from utils import create_frip_table_from_bed
 
-GENOME_SIZE = {"hg38": 3.1*10**9, "mm39": 2.7*10**9, "mm10": 2.7*10**9}
-
 parser = argparse.ArgumentParser(description="Create a FRiP table")
 parser.add_argument("config_path", type=str, help="Path to the configuration file.")
 args = parser.parse_args()
@@ -19,6 +17,7 @@ with open(args.config_path, "r") as f:
 
 ######## Read parameters from config file##############################################
 species = config["parameters"]["species"]
+effective_genome_size = config["parameters"]["effective_genome_size"]
 CONDITION = config["parameters"]["condition"]
 peak_protein = config["parameters"]["peak_protein"]
 nproc = config["parameters"]["nproc"]
@@ -30,13 +29,6 @@ path_to_blacklist = config["input"]["path_to_blacklist"]
 
 output_dir = config["output"]["output_directory"]
 ######## Create metadata table #########################################################
-try:
-    genome_size = GENOME_SIZE[species]
-except KeyError:
-    genome_size = config["parameters"]["genome_size"]
-    if genome_size is None:
-        raise Exception("Please use genome_size in create_frip_table_config.yml to specify the genome size. Currently, we only include genome size of hg38 and mm10")
-
 df = pd.read_table(path_to_metadata)
 if "BAM" in df.columns:
     customized_metadata = True
@@ -97,7 +89,7 @@ for idx, condition in enumerate(conditions):
             samples_metadata,
             bed,
             path_to_data,
-            genome_size,
+            effective_genome_size,
             species,
             nproc,
             peak_protein_srun=peak_protein_sruns[i],

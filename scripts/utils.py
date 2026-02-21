@@ -84,7 +84,7 @@ def create_frip_table_from_bed(
     samples_metadata,
     path_to_bed,
     path_to_data,
-    genome_size,
+    effective_genome_size,
     species,
     nproc,
     peak_protein_srun="",
@@ -123,7 +123,7 @@ def create_frip_table_from_bed(
         samples_frips.append(result[0])
         total_reads.append(result[2])
         flank_regions_for_reads_overlap_peaks = result[3]
-        expected_prob_read_in_peak = (total_bp_in_peaks + flank_regions_for_reads_overlap_peaks) / genome_size
+        expected_prob_read_in_peak = (total_bp_in_peaks + flank_regions_for_reads_overlap_peaks) / effective_genome_size
         frip_enrich.append(result[0] / expected_prob_read_in_peak) # This is the ratio of observed reads in peaks / expected reads in peaks
 
     frip_df = pd.DataFrame({"FRiP": samples_frips})
